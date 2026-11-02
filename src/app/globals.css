@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-jetbrains-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* =============================================
+   SWIPER OVERRIDES
+   Dipindahkan dari dangerouslySetInnerHTML di Projects.tsx
+   ============================================= */
+.projects-swiper .swiper-button-next,
+.projects-swiper .swiper-button-prev {
+  color: #22d3ee !important;
+  transform: scale(0.7);
+}
+
+.projects-swiper .swiper-pagination-bullet-active {
+  background-color: #22d3ee !important;
+}
+
+.projects-swiper .swiper-slide {
+  height: auto;
+}
+
+/* =============================================
+   REDUCED MOTION SUPPORT
+   Menghormati preferensi aksesibilitas pengguna
+   ============================================= */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Matikan Framer Motion animate-ping */
+  .animate-ping {
+    animation: none !important;
+  }
+
+  /* Matikan animate-pulse skeleton */
+  .animate-pulse {
+    animation: none !important;
+    opacity: 0.5;
+  }
+
+  /* Marquee dihentikan */
+  .rfm-marquee-container .rfm-marquee {
+    animation-play-state: paused !important;
+  }
+}
