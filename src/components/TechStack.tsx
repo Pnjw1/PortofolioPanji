@@ -58,9 +58,9 @@ export default function TechStack() {
       >
         <h2 className="text-3xl md:text-4xl font-bold flex items-center gap-3">
           <Cpu className="text-cyan-400" size={32} />
-          <span>Tech Arsenal</span>
+          <span>Teknologi</span>
         </h2>
-        <div className="w-20 h-1 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full" />
+        <div className="w-12 h-0.5 bg-cyan-500" />
       </motion.div>
 
       {/* Loading Skeleton */}
@@ -83,7 +83,7 @@ export default function TechStack() {
               {technologies.map((tech) => (
                 <div
                   key={tech.name}
-                  className="group relative w-48 md:w-56 p-6 rounded-xl bg-[#1e1e1e] border border-zinc-800 hover:border-cyan-500/50 transition-all duration-300 hover:shadow-[0_0_20px_rgba(34,211,238,0.15)] flex flex-col items-center justify-center gap-4 text-center overflow-hidden flex-shrink-0"
+                  className="group relative w-48 md:w-56 p-6 rounded-xl bg-[#1e1e1e] border border-zinc-800 hover:border-cyan-500/50 transition-all duration-300 flex flex-col items-center justify-center gap-4 text-center overflow-hidden flex-shrink-0"
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   <div className="relative z-10 p-2 w-16 h-16 rounded-xl bg-zinc-900 shadow-inner group-hover:scale-110 flex items-center justify-center transition-transform duration-300 overflow-hidden">

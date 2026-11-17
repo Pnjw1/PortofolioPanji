@@ -71,6 +71,9 @@ export default function Testimonials() {
   const totalPages = Math.ceil(testimonials.length / perPage);
   const visible = testimonials.slice(page * perPage, page * perPage + perPage);
 
+  // Sembunyikan seluruh seksi jika belum ada testimoni.
+  if (!loading && testimonials.length === 0) return null;
+
   return (
     <section id="testimonials" className="space-y-12">
       <motion.div
@@ -84,7 +87,7 @@ export default function Testimonials() {
             <MessageSquareQuote className="text-cyan-400" size={32} />
             <span>Testimonials</span>
           </h2>
-          <div className="w-20 h-1 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full" />
+          <div className="w-12 h-0.5 bg-cyan-500" />
         </div>
       </motion.div>
 

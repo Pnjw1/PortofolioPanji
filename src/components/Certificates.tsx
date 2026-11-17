@@ -82,7 +82,7 @@ export default function Certificates() {
           <Award className="text-cyan-400" size={32} />
           <span>Certifications & Badges</span>
         </h2>
-        <div className="w-20 h-1 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full" />
+        <div className="w-12 h-0.5 bg-cyan-500" />
       </motion.div>
 
       <div className="space-y-8 min-h-[400px]">
@@ -185,7 +185,7 @@ export default function Certificates() {
                 onClick={() => setCurrentPage(i + 1)}
                 className={`w-10 h-10 rounded-lg font-mono text-sm border transition-all duration-300 flex items-center justify-center ${
                   currentPage === i + 1 
-                    ? 'bg-cyan-500/20 border-cyan-500 text-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.2)]'
+                    ? 'bg-cyan-500/20 border-cyan-500 text-cyan-400'
                     : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-cyan-500/50 hover:text-cyan-400'
                 }`}
               >

@@ -67,7 +67,7 @@ export default function Projects() {
           <Briefcase className="text-cyan-400" size={32} />
           <span>Featured Projects</span>
         </h2>
-        <div className="w-20 h-1 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full" />
+        <div className="w-12 h-0.5 bg-cyan-500" />
       </motion.div>
 
       {/* Loading Skeleton */}

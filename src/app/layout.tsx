@@ -110,6 +110,12 @@ export default function RootLayout({
             })
           }}
         />
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:px-4 focus:py-2 focus:bg-cyan-500 focus:text-zinc-950 focus:rounded-lg focus:font-semibold"
+        >
+          Lewati ke konten utama
+        </a>
         {children}
         <ScrollToTop />
         <Analytics />

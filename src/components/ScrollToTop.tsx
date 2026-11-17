@@ -37,7 +37,7 @@ export default function ScrollToTop() {
   return (
     <button
       onClick={scrollToTop}
-      className={`fixed bottom-8 right-8 z-50 p-3 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.3)] backdrop-blur-md transition-all duration-300 hover:scale-110 hover:bg-cyan-500/20 hover:shadow-[0_0_20px_rgba(6,182,212,0.5)] group ${
+      className={`fixed bottom-8 right-8 z-50 p-3 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 backdrop-blur-md transition-all duration-300 hover:scale-110 hover:bg-cyan-500/20 group ${
         isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"
       }`}
       aria-label="Kembali ke atas"

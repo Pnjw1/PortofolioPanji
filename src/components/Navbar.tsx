@@ -81,7 +81,7 @@ export default function Navbar() {
               ))}
               <a
                 href={`mailto:${SITE.email}`}
-                className="ml-4 px-5 py-2 bg-cyan-500/10 text-cyan-400 border border-cyan-500/40 rounded-lg text-sm font-medium hover:bg-cyan-500/20 hover:border-cyan-500 hover:shadow-[0_0_15px_rgba(34,211,238,0.2)] transition-all duration-300"
+                className="ml-4 px-5 py-2 bg-cyan-500/10 text-cyan-400 border border-cyan-500/40 rounded-lg text-sm font-medium hover:bg-cyan-500/20 hover:border-cyan-500 transition-all duration-300"
               >
                 Hire Me
               </a>
@@ -91,7 +91,9 @@ export default function Navbar() {
             <button
               onClick={() => setIsOpen(!isOpen)}
               className="md:hidden p-2 text-zinc-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-              aria-label="Toggle menu"
+              aria-label={isOpen ? "Tutup menu" : "Buka menu"}
+              aria-expanded={isOpen}
+              aria-controls="mobile-menu"
             >
               {isOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
@@ -103,6 +105,7 @@ export default function Navbar() {
       <AnimatePresence>
         {isOpen && (
           <motion.div
+            id="mobile-menu"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}

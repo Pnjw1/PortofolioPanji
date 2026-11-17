@@ -90,7 +90,7 @@ export default function Contact() {
 
           <div className="space-y-4 relative z-10">
             <h2 className="text-4xl md:text-5xl font-bold">
-              Let&apos;s <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">Connect</span>
+              Let&apos;s <span className="text-cyan-400">Connect</span>
             </h2>
             <p className="text-zinc-400 max-w-xl mx-auto text-lg">
               Have a project in mind, need network configuration, or just want to chat about tech? My inbox is always open.
@@ -103,7 +103,7 @@ export default function Contact() {
               <h3 className="text-2xl font-bold text-white mb-4">Reaching out directly?</h3>
               <a 
                 href={`mailto:${SITE.email}`}
-                className="w-full px-6 py-4 bg-zinc-100 text-zinc-900 font-bold rounded-xl flex items-center justify-start gap-4 hover:scale-105 hover:bg-white transition-all duration-300 shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+                className="w-full px-6 py-4 bg-zinc-100 text-zinc-900 font-bold rounded-xl flex items-center justify-start gap-4 hover:scale-105 hover:bg-white transition-all duration-300"
               >
                 <Mail size={20} />
                 {SITE.email}
@@ -204,7 +204,7 @@ export default function Contact() {
                 <button 
                   type="submit" 
                   disabled={loading || !turnstileToken}
-                  className="w-full py-3 bg-gradient-to-r from-cyan-500 to-purple-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50 transition-all"
+                  className="w-full py-3 bg-cyan-500 text-zinc-950 font-bold rounded-xl flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50 transition-all"
                 >
                   {loading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
                   {loading ? 'Sending...' : 'Send Message'}
