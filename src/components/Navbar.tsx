@@ -82,10 +82,11 @@ export default function Navbar() {
                 </a>
               ))}
               <a
-                href={`mailto:${SITE.email}`}
-                className="ml-4 px-5 py-2 bg-cyan-500/10 text-cyan-400 border border-cyan-500/40 rounded-lg text-sm font-medium hover:bg-cyan-500/20 hover:border-cyan-500 transition-all duration-300"
+                href="#contact"
+                onClick={(e) => handleLinkClick(e, "#contact")}
+                className="ml-4 px-5 py-2 bg-cyan-500 text-zinc-950 rounded-lg text-sm font-semibold hover:bg-cyan-400 transition-colors cursor-pointer"
               >
-                Hire Me
+                Hubungi Saya
               </a>
             </div>
 
@@ -127,10 +128,11 @@ export default function Navbar() {
                 </a>
               ))}
               <a
-                href={`mailto:${SITE.email}`}
-                className="mt-2 px-4 py-3 text-sm text-center bg-cyan-500/10 text-cyan-400 border border-cyan-500/40 rounded-lg font-medium hover:bg-cyan-500/20 transition-all duration-200"
+                href="#contact"
+                onClick={(e) => handleLinkClick(e, "#contact")}
+                className="mt-2 px-4 py-3 text-sm text-center bg-cyan-500 text-zinc-950 rounded-lg font-semibold hover:bg-cyan-400 transition-colors cursor-pointer"
               >
-                Hire Me
+                Hubungi Saya
               </a>
             </div>
           </motion.div>

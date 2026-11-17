@@ -2,8 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { FileText, Trash2, Plus, Pencil, X, Check, Eye, EyeOff, ExternalLink } from 'lucide-react';
+import { FileText, Trash2, Plus, Pencil, X, Check, Eye, EyeOff, ExternalLink, Headphones } from 'lucide-react';
 import { useToast } from '@/components/Toast';
+import { extractMusicFromContent } from '@/components/ArticleReader';
+
+function buildContentWithMusic(body: string, musicUrl: string, musicTitle: string): string {
+  const cleanBody = extractMusicFromContent(body).cleanBody;
+  const trimmedUrl = musicUrl.trim();
+  if (!trimmedUrl) return cleanBody;
+  const trimmedTitle = musicTitle.trim();
+  const tag = trimmedTitle ? `[music](${trimmedUrl}|${trimmedTitle})` : `[music](${trimmedUrl})`;
+  return `${tag}\n\n${cleanBody}`;
+}
 
 export default function BlogManager() {
   const [list, setList] = useState<any[]>([]);
@@ -18,6 +28,8 @@ export default function BlogManager() {
   const [slug, setSlug] = useState('');
   const [excerpt, setExcerpt] = useState('');
   const [content, setContent] = useState('');
+  const [musicUrl, setMusicUrl] = useState('');
+  const [musicTitle, setMusicTitle] = useState('');
   const [tags, setTags] = useState('');
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [isPublished, setIsPublished] = useState(false);
@@ -42,30 +54,43 @@ export default function BlogManager() {
     let coverUrl = null;
     if (coverFile) {
       const fileExt = coverFile.name.split('.').pop();
-      const fileName = `blog_${Math.random()}.${fileExt}`;
+      const fileName = `blog_${Date.now()}.${fileExt}`;
       const { error: uploadError } = await supabase.storage.from('portfolio_images').upload(fileName, coverFile);
-      if (uploadError) { toast('Upload gagal: ' + uploadError.message, 'error'); setSaving(false); return; }
+      if (uploadError) {
+        toast('Upload sampul gagal: ' + uploadError.message, 'error');
+        setSaving(false);
+        return;
+      }
       const { data: { publicUrl } } = supabase.storage.from('portfolio_images').getPublicUrl(fileName);
       coverUrl = publicUrl;
     }
 
     const tagArray = tags.split(',').map(t => t.trim()).filter(t => t !== '');
     const finalSlug = slug || autoSlug(title);
+    const finalContent = buildContentWithMusic(content, musicUrl, musicTitle);
 
     const { error } = await supabase.from('portfolio_posts').insert([{
-      title, slug: finalSlug, excerpt: excerpt || null, content,
-      cover_url: coverUrl, tags: tagArray,
-      is_published: isPublished, published_at: isPublished ? new Date().toISOString() : null,
+      title,
+      slug: finalSlug,
+      excerpt: excerpt || null,
+      content: finalContent,
+      cover_url: coverUrl,
+      tags: tagArray,
+      is_published: isPublished,
+      published_at: isPublished ? new Date().toISOString() : null,
     }]);
 
     if (!error) {
       setTitle(''); setSlug(''); setExcerpt(''); setContent(''); setTags('');
+      setMusicUrl(''); setMusicTitle('');
       setCoverFile(null); setIsPublished(false);
       const el = document.getElementById('cover-upload') as HTMLInputElement;
       if (el) el.value = '';
       fetchData();
       toast('Artikel berhasil ditambahkan!', 'success');
-    } else { toast('Gagal: ' + error.message, 'error'); }
+    } else {
+      toast('Gagal: ' + error.message, 'error');
+    }
     setSaving(false);
   }
 
@@ -82,23 +107,33 @@ export default function BlogManager() {
       is_published: newState,
       published_at: newState ? new Date().toISOString() : null,
     }).eq('id', item.id);
-    if (!error) { fetchData(); toast(newState ? 'Artikel dipublikasi!' : 'Artikel disembunyikan.', 'success'); }
+    if (!error) { fetchData(); toast(newState ? 'Artikel dipublikasikan!' : 'Artikel disembunyikan.', 'success'); }
     else toast('Gagal: ' + error.message, 'error');
   }
 
   function startEdit(item: any) {
+    const parsed = extractMusicFromContent(item.content || '');
     setEditingId(item.id);
     setEditData({
-      title: item.title, slug: item.slug, excerpt: item.excerpt || '',
-      content: item.content, tags: item.tags?.join(', ') || '',
+      title: item.title,
+      slug: item.slug,
+      excerpt: item.excerpt || '',
+      content: parsed.cleanBody,
+      musicUrl: parsed.musicUrl || '',
+      musicTitle: parsed.musicTitle || '',
+      tags: item.tags?.join(', ') || '',
     });
   }
 
   async function saveEdit(id: number) {
     const tagArray = editData.tags.split(',').map((t: string) => t.trim()).filter((t: string) => t !== '');
+    const finalContent = buildContentWithMusic(editData.content, editData.musicUrl || '', editData.musicTitle || '');
     const { error } = await supabase.from('portfolio_posts').update({
-      title: editData.title, slug: editData.slug, excerpt: editData.excerpt || null,
-      content: editData.content, tags: tagArray,
+      title: editData.title,
+      slug: editData.slug,
+      excerpt: editData.excerpt || null,
+      content: finalContent,
+      tags: tagArray,
     }).eq('id', id);
     if (!error) { setEditingId(null); fetchData(); toast('Perubahan disimpan!', 'success'); }
     else toast('Gagal: ' + error.message, 'error');
@@ -108,72 +143,105 @@ export default function BlogManager() {
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
         <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
-          <FileText className="text-orange-500" />
-          Manage Blog
+          <FileText className="text-cyan-400" />
+          Manage Jurnal &amp; Artikel
         </h1>
-        <p className="text-zinc-400 mt-1 text-sm">Tulis dan kelola artikel, tutorial, dan sharing.</p>
+        <p className="text-zinc-400 mt-1 text-sm">
+          Tulis artikel dengan gaya editorial dan tambahkan lagu pilihan (Spotify / YouTube / MP3) untuk menemani pembaca.
+        </p>
       </div>
 
       {/* ADD FORM */}
       <div className="bg-[#121212] border border-zinc-800 p-4 md:p-6 rounded-2xl">
         <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-          <Plus size={18} className="text-orange-400" /> Tulis Artikel Baru
+          <Plus size={18} className="text-cyan-400" /> Tulis Artikel Baru
         </h2>
         <form onSubmit={handleAdd} className="space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-mono text-zinc-500 mb-1">Judul</label>
-              <input type="text" required value={title} onChange={e => { setTitle(e.target.value); if (!slug) setSlug(autoSlug(e.target.value)); }}
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-orange-500" />
+              <input type="text" required value={title}
+                onChange={e => { setTitle(e.target.value); if (!slug) setSlug(autoSlug(e.target.value)); }}
+                placeholder="Cara Membuat Website dengan Next.js"
+                className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-cyan-500" />
             </div>
             <div>
-              <label className="block text-xs font-mono text-zinc-500 mb-1">Slug (URL)</label>
+              <label className="block text-xs font-mono text-zinc-500 mb-1">Slug URL</label>
               <input type="text" value={slug} onChange={e => setSlug(e.target.value)}
-                placeholder="auto-generated"
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-orange-500" />
-              <p className="text-xs text-zinc-600 mt-1">/blog/{slug || 'auto'}</p>
+                placeholder="cara-membuat-website-dengan-nextjs"
+                className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-cyan-500 font-mono" />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-mono text-zinc-500 mb-1">Ringkasan (untuk SEO & preview)</label>
+            <label className="block text-xs font-mono text-zinc-500 mb-1">Subjudul / Ringkasan Singkat (Tampil di bawah judul)</label>
             <input type="text" value={excerpt} onChange={e => setExcerpt(e.target.value)}
-              placeholder="1-2 kalimat tentang isi artikel"
-              className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-orange-500" />
+              placeholder="Catatan singkat tentang proses perancangan dan hal yang dipelajari..."
+              className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-cyan-500" />
+          </div>
+
+          {/* Musik / Lagu Teman Baca */}
+          <div className="p-3.5 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-2">
+            <div className="flex items-center gap-2 text-xs font-mono text-cyan-400">
+              <Headphones size={14} />
+              <span>Lagu Teman Baca (Opsional — Spotify / YouTube / MP3)</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <input
+                  type="url"
+                  value={musicUrl}
+                  onChange={e => setMusicUrl(e.target.value)}
+                  placeholder="https://open.spotify.com/track/..."
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white text-xs sm:text-sm outline-none focus:border-cyan-500 font-mono"
+                />
+              </div>
+              <div>
+                <input
+                  type="text"
+                  value={musicTitle}
+                  onChange={e => setMusicTitle(e.target.value)}
+                  placeholder="Judul Lagu — Artis (Opsional)"
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white text-xs sm:text-sm outline-none focus:border-cyan-500"
+                />
+              </div>
+            </div>
           </div>
 
           <div>
-            <label className="block text-xs font-mono text-zinc-500 mb-1">Konten (Markdown)</label>
+            <label className="block text-xs font-mono text-zinc-500 mb-1">
+              Konten (Mendukung: # Heading, **bold**, *italic*, `code`, ```code block```, - list, &gt; kutipan, ![alt](url))
+            </label>
             <textarea required value={content} onChange={e => setContent(e.target.value)} rows={10}
-              placeholder={"## Pengenalan\n\nTulis artikel kamu di sini dengan format **Markdown**.\n\n### Sub-judul\n\n- List item 1\n- List item 2\n\n`kode inline`\n\n```\nblok kode\n```"}
-              className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-orange-500 font-mono" />
+              placeholder={"Tulis isi artikel di sini..."}
+              className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-cyan-500 font-mono leading-relaxed" />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
             <div>
-              <label className="block text-xs font-mono text-zinc-500 mb-1">Tags (comma separated)</label>
+              <label className="block text-xs font-mono text-zinc-500 mb-1">Tags (pisah koma)</label>
               <input type="text" value={tags} onChange={e => setTags(e.target.value)}
-                placeholder="Next.js, Tutorial, Web Dev"
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-orange-500" />
+                placeholder="Next.js, Desain, Catatan"
+                className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-cyan-500" />
             </div>
             <div>
               <label className="block text-xs font-mono text-zinc-500 mb-1">Cover Image (opsional)</label>
-              <input id="cover-upload" type="file" accept="image/*" onChange={e => setCoverFile(e.target.files?.[0] || null)}
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-white text-sm outline-none file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-500 file:text-white" />
+              <input id="cover-upload" type="file" accept="image/*"
+                onChange={e => setCoverFile(e.target.files?.[0] || null)}
+                className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5 text-white text-sm file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-cyan-500 file:text-black file:font-bold" />
+            </div>
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 cursor-pointer text-sm text-zinc-300">
+                <input type="checkbox" checked={isPublished} onChange={e => setIsPublished(e.target.checked)}
+                  className="rounded accent-cyan-500 w-4 h-4" />
+                Langsung Publish
+              </label>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={isPublished} onChange={e => setIsPublished(e.target.checked)}
-                className="w-4 h-4 accent-orange-500" />
-              <span className="text-sm text-zinc-400">Langsung publish</span>
-            </label>
-          </div>
-
           <button type="submit" disabled={saving}
-            className="w-full sm:w-auto px-6 py-2 bg-orange-500 hover:bg-orange-400 text-white font-bold rounded-lg transition-colors text-sm">
-            {saving ? "..." : "Simpan Artikel"}
+            className="w-full sm:w-auto px-6 py-2.5 bg-cyan-500 hover:bg-cyan-400 text-black font-bold rounded-lg transition-colors text-sm disabled:opacity-50 cursor-pointer">
+            {saving ? "Menyimpan..." : "Simpan Artikel"}
           </button>
         </form>
       </div>
@@ -190,67 +258,84 @@ export default function BlogManager() {
           ) : list.length === 0 ? (
             <div className="p-6 text-center text-zinc-500">Belum ada artikel.</div>
           ) : (
-            list.map((item) => (
-              <div key={item.id} className="p-4 md:p-5 hover:bg-zinc-800/10 transition-colors">
-                {editingId === item.id ? (
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <input value={editData.title} onChange={e => setEditData({...editData, title: e.target.value})}
-                        placeholder="Judul" className="bg-zinc-900 border border-orange-500/50 rounded-lg px-3 py-2 text-white text-sm outline-none" />
-                      <input value={editData.slug} onChange={e => setEditData({...editData, slug: e.target.value})}
-                        placeholder="Slug" className="bg-zinc-900 border border-orange-500/50 rounded-lg px-3 py-2 text-white text-sm outline-none" />
+            list.map(item => {
+              const hasMusic = Boolean(extractMusicFromContent(item.content || '').musicUrl);
+              return (
+                <div key={item.id} className="p-4 md:p-5 hover:bg-zinc-800/10 transition-colors">
+                  {editingId === item.id ? (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <input value={editData.title} onChange={e => setEditData({...editData, title: e.target.value})}
+                          placeholder="Judul" className="bg-zinc-900 border border-cyan-500/50 rounded-lg px-3 py-2 text-white text-sm outline-none" />
+                        <input value={editData.slug} onChange={e => setEditData({...editData, slug: e.target.value})}
+                          placeholder="Slug" className="bg-zinc-900 border border-cyan-500/50 rounded-lg px-3 py-2 text-white text-sm outline-none font-mono" />
+                      </div>
+                      <input value={editData.excerpt} onChange={e => setEditData({...editData, excerpt: e.target.value})}
+                        placeholder="Subjudul / Ringkasan" className="w-full bg-zinc-900 border border-cyan-500/50 rounded-lg px-3 py-2 text-white text-sm outline-none" />
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-lg bg-zinc-900/60 border border-zinc-800">
+                        <input value={editData.musicUrl || ''} onChange={e => setEditData({...editData, musicUrl: e.target.value})}
+                          placeholder="Link Lagu Spotify / YouTube / MP3 (Opsional)" className="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white text-xs font-mono outline-none" />
+                        <input value={editData.musicTitle || ''} onChange={e => setEditData({...editData, musicTitle: e.target.value})}
+                          placeholder="Judul Lagu — Artis (Opsional)" className="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white text-xs outline-none" />
+                      </div>
+
+                      <textarea value={editData.content} onChange={e => setEditData({...editData, content: e.target.value})}
+                        rows={8} className="w-full bg-zinc-900 border border-cyan-500/50 rounded-lg px-3 py-2 text-white text-sm outline-none font-mono" />
+                      <input value={editData.tags} onChange={e => setEditData({...editData, tags: e.target.value})}
+                        placeholder="Tags (pisah koma)" className="w-full bg-zinc-900 border border-cyan-500/50 rounded-lg px-3 py-2 text-white text-sm outline-none" />
+                      <div className="flex gap-2">
+                        <button onClick={() => saveEdit(item.id)} className="px-4 py-1.5 bg-emerald-500 text-black rounded-lg text-sm font-bold flex items-center gap-1 cursor-pointer"><Check size={14} /> Simpan</button>
+                        <button onClick={() => setEditingId(null)} className="px-4 py-1.5 bg-zinc-800 text-zinc-300 rounded-lg text-sm flex items-center gap-1 cursor-pointer"><X size={14} /> Batal</button>
+                      </div>
                     </div>
-                    <input value={editData.excerpt} onChange={e => setEditData({...editData, excerpt: e.target.value})}
-                      placeholder="Ringkasan" className="w-full bg-zinc-900 border border-orange-500/50 rounded-lg px-3 py-2 text-white text-sm outline-none" />
-                    <textarea value={editData.content} onChange={e => setEditData({...editData, content: e.target.value})}
-                      rows={8} className="w-full bg-zinc-900 border border-orange-500/50 rounded-lg px-3 py-2 text-white text-sm outline-none font-mono" />
-                    <input value={editData.tags} onChange={e => setEditData({...editData, tags: e.target.value})}
-                      placeholder="Tags" className="w-full bg-zinc-900 border border-orange-500/50 rounded-lg px-3 py-2 text-white text-sm outline-none" />
-                    <div className="flex gap-2">
-                      <button onClick={() => saveEdit(item.id)} className="px-4 py-1.5 bg-emerald-500 text-black rounded-lg text-sm font-bold flex items-center gap-1"><Check size={14} /> Simpan</button>
-                      <button onClick={() => setEditingId(null)} className="px-4 py-1.5 bg-zinc-800 text-zinc-300 rounded-lg text-sm flex items-center gap-1"><X size={14} /> Batal</button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-semibold text-white truncate">{item.title}</h3>
-                        {item.is_published ? (
-                          <span className="text-xs px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded font-mono">PUBLISHED</span>
-                        ) : (
-                          <span className="text-xs px-2 py-0.5 bg-zinc-600/10 text-zinc-500 border border-zinc-600/30 rounded font-mono">DRAFT</span>
+                  ) : (
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-semibold text-white">{item.title}</h3>
+                          <span className={`text-xs px-2 py-0.5 rounded font-mono ${item.is_published ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-zinc-800 text-zinc-500'}`}>
+                            {item.is_published ? 'Published' : 'Draft'}
+                          </span>
+                          {hasMusic && (
+                            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded font-mono bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                              <Headphones size={11} /> Lagu
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-zinc-500 font-mono mt-1">/blog/{item.slug}</p>
+                        {item.tags?.length > 0 && (
+                          <div className="flex gap-1 mt-1.5 flex-wrap">
+                            {item.tags.map((t: string) => (
+                              <span key={t} className="text-xs px-2 py-0.5 bg-zinc-800 text-zinc-400 rounded font-mono">{t}</span>
+                            ))}
+                          </div>
                         )}
                       </div>
-                      <p className="text-xs text-zinc-500 mt-1 line-clamp-1">{item.excerpt || item.content?.slice(0, 80) + '...'}</p>
-                      <div className="flex flex-wrap gap-1 mt-1.5">
-                        {item.tags?.map((t: string) => (
-                          <span key={t} className="text-xs px-2 py-0.5 bg-zinc-800 text-zinc-400 rounded font-mono">{t}</span>
-                        ))}
+                      <div className="flex items-center gap-1 shrink-0">
+                        {item.is_published && (
+                          <a href={`/blog/${item.slug}`} target="_blank"
+                            className="p-2 text-zinc-500 hover:text-cyan-400 hover:bg-cyan-400/10 rounded-lg transition-colors" title="Lihat">
+                            <ExternalLink size={16} />
+                          </a>
+                        )}
+                        <button onClick={() => togglePublish(item)}
+                          className={`p-2 rounded-lg transition-colors cursor-pointer ${item.is_published ? 'text-emerald-400 hover:bg-emerald-400/10' : 'text-zinc-500 hover:text-white hover:bg-zinc-800'}`}
+                          title={item.is_published ? "Unpublish" : "Publish"}>
+                          {item.is_published ? <Eye size={16} /> : <EyeOff size={16} />}
+                        </button>
+                        <button onClick={() => startEdit(item)} className="p-2 text-zinc-500 hover:text-cyan-400 hover:bg-cyan-400/10 rounded-lg transition-colors cursor-pointer" title="Edit">
+                          <Pencil size={16} />
+                        </button>
+                        <button onClick={() => handleDelete(item.id)} className="p-2 text-zinc-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors cursor-pointer" title="Delete">
+                          <Trash2 size={16} />
+                        </button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                      {item.is_published && (
-                        <a href={`/blog/${item.slug}`} target="_blank" className="p-2 text-zinc-500 hover:text-cyan-400 hover:bg-cyan-400/10 rounded-lg transition-colors" title="Preview">
-                          <ExternalLink size={16} />
-                        </a>
-                      )}
-                      <button onClick={() => togglePublish(item)}
-                        className={`p-2 rounded-lg transition-colors ${item.is_published ? 'text-emerald-400 hover:text-emerald-300 hover:bg-emerald-400/10' : 'text-zinc-500 hover:text-emerald-400 hover:bg-emerald-400/10'}`}
-                        title={item.is_published ? 'Sembunyikan' : 'Publish'}>
-                        {item.is_published ? <Eye size={16} /> : <EyeOff size={16} />}
-                      </button>
-                      <button onClick={() => startEdit(item)} className="p-2 text-zinc-500 hover:text-orange-400 hover:bg-orange-400/10 rounded-lg transition-colors" title="Edit">
-                        <Pencil size={16} />
-                      </button>
-                      <button onClick={() => handleDelete(item.id)} className="p-2 text-zinc-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors" title="Delete">
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))
+                  )}
+                </div>
+              );
+            })
           )}
         </div>
       </div>

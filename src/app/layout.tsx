@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, JetBrains_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import ScrollToTop from "@/components/ScrollToTop";
+import { ToastProvider } from "@/components/Toast";
 import "./globals.css";
 import { SITE } from "@/lib/site";
 
@@ -116,7 +117,9 @@ export default function RootLayout({
         >
           Lewati ke konten utama
         </a>
-        {children}
+        <ToastProvider>
+          {children}
+        </ToastProvider>
         <ScrollToTop />
         <Analytics />
       </body>

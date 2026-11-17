@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from 'react';
-import { Mail, Phone, Code2, Send, Loader2 } from 'lucide-react';
+import { Mail, Phone, Code2, Send, Loader2, Copy, Check, ExternalLink } from 'lucide-react';
 import { useToast } from '@/components/Toast';
 import { SITE } from '@/lib/site';
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
@@ -14,6 +14,7 @@ export default function Contact() {
   const [honeypot, setHoneypot] = useState('');
   const [loading, setLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const [copiedEmail, setCopiedEmail] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const turnstileRef = useRef<TurnstileInstance>(null);
 
@@ -24,6 +25,17 @@ export default function Contact() {
     }, 1000);
     return () => clearInterval(timer);
   }, [cooldown]);
+
+  const handleCopyEmail = async () => {
+    try {
+      await navigator.clipboard.writeText(SITE.email);
+      setCopiedEmail(true);
+      toast(`Email ${SITE.email} berhasil disalin!`, 'success');
+      setTimeout(() => setCopiedEmail(false), 2500);
+    } catch {
+      window.location.href = `mailto:${SITE.email}`;
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,13 +86,13 @@ export default function Contact() {
           setCooldown(60);
         }
       } else {
-        toast('Pesan berhasil terkirim!', 'success');
+        toast('Pesan berhasil terkirim! Terima kasih telah menghubungi saya.', 'success');
         setFormData({ name: '', email: '', message: '' });
         setCooldown(60);
       }
     } catch {
       setLoading(false);
-      toast('Terjadi kesalahan jaringan', 'error');
+      toast('Terjadi kesalahan jaringan. Silakan coba lagi.', 'error');
     } finally {
       setTurnstileToken(null);
       turnstileRef.current?.reset();
@@ -101,32 +113,91 @@ export default function Contact() {
         {/* Direct Links */}
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-zinc-200">Kontak Langsung</h3>
-          <a 
-            href={`mailto:${SITE.email}`}
-            className="w-full px-5 py-4 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-100 font-medium rounded-xl flex items-center gap-3 transition-colors"
-          >
-            <Mail size={18} className="text-cyan-400 shrink-0" />
-            <span className="truncate">{SITE.email}</span>
-          </a>
+
+          {/* Email card: klik untuk salin email + tombol buka Gmail langsung */}
+          <div className="w-full p-4 bg-zinc-900 border border-zinc-800 hover:border-cyan-500/40 rounded-xl flex items-center justify-between gap-3 transition-colors">
+            <button
+              type="button"
+              onClick={handleCopyEmail}
+              className="flex items-center gap-3 text-left flex-1 min-w-0 cursor-pointer group"
+              title="Klik untuk menyalin alamat email"
+            >
+              <div className="p-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-cyan-400 group-hover:border-cyan-500/40 transition-colors shrink-0">
+                <Mail size={18} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-mono text-zinc-500">Email (Klik untuk salin)</p>
+                <p className="text-sm font-medium text-zinc-100 group-hover:text-cyan-400 transition-colors truncate">
+                  {SITE.email}
+                </p>
+              </div>
+            </button>
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={handleCopyEmail}
+                className="px-2.5 py-1.5 rounded-lg bg-zinc-950 border border-zinc-800 hover:border-cyan-500/40 text-xs font-mono text-zinc-300 hover:text-cyan-400 flex items-center gap-1 transition-colors cursor-pointer"
+                title="Salin Email"
+              >
+                {copiedEmail ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+                <span>{copiedEmail ? 'Tersalin' : 'Salin'}</span>
+              </button>
+              <a
+                href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(SITE.email)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-2.5 py-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/30 hover:bg-cyan-500/20 text-xs font-mono text-cyan-400 flex items-center gap-1 transition-colors"
+                title="Tulis email lewat Gmail di browser"
+              >
+                <span>Gmail</span>
+                <ExternalLink size={12} />
+              </a>
+            </div>
+          </div>
           
           <a 
             href={SITE.whatsapp}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full px-5 py-4 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-100 font-medium rounded-xl flex items-center gap-3 transition-colors"
+            className="w-full p-4 bg-zinc-900 border border-zinc-800 hover:border-cyan-500/40 text-zinc-100 rounded-xl flex items-center justify-between gap-3 transition-colors group"
           >
-            <Phone size={18} className="text-cyan-400 shrink-0" />
-            <span>WhatsApp (+62 888-0940-9219)</span>
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="p-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-cyan-400 group-hover:border-cyan-500/40 transition-colors shrink-0">
+                <Phone size={18} />
+              </div>
+              <div>
+                <p className="text-xs font-mono text-zinc-500">WhatsApp</p>
+                <p className="text-sm font-medium text-zinc-100 group-hover:text-cyan-400 transition-colors">
+                  +62 888-0940-9219
+                </p>
+              </div>
+            </div>
+            <span className="text-xs font-mono text-cyan-400 flex items-center gap-1 shrink-0">
+              Chat <ExternalLink size={12} />
+            </span>
           </a>
 
           <a 
             href="https://g.dev/panjiwiguna" 
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full px-5 py-4 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-100 font-medium rounded-xl flex items-center gap-3 transition-colors"
+            className="w-full p-4 bg-zinc-900 border border-zinc-800 hover:border-cyan-500/40 text-zinc-100 rounded-xl flex items-center justify-between gap-3 transition-colors group"
           >
-            <Code2 size={18} className="text-cyan-400 shrink-0" />
-            <span>Google Developer Profile</span>
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="p-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-cyan-400 group-hover:border-cyan-500/40 transition-colors shrink-0">
+                <Code2 size={18} />
+              </div>
+              <div>
+                <p className="text-xs font-mono text-zinc-500">Google Developers</p>
+                <p className="text-sm font-medium text-zinc-100 group-hover:text-cyan-400 transition-colors">
+                  g.dev/panjiwiguna
+                </p>
+              </div>
+            </div>
+            <span className="text-xs font-mono text-cyan-400 flex items-center gap-1 shrink-0">
+              Profil <ExternalLink size={12} />
+            </span>
           </a>
         </div>
 
@@ -201,7 +272,7 @@ export default function Contact() {
             <button 
               type="submit" 
               disabled={loading || cooldown > 0 || (Boolean(turnstileSiteKey) && !turnstileToken)}
-              className="w-full py-3 bg-cyan-500 text-zinc-950 font-semibold rounded-lg flex items-center justify-center gap-2 hover:bg-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full py-3 bg-cyan-500 text-zinc-950 font-semibold rounded-lg flex items-center justify-center gap-2 hover:bg-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
             >
               {loading ? (
                 <>

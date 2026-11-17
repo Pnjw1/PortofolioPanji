@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Briefcase, Trash2, Plus, Pencil, X, Check, ArrowUp, ArrowDown, Upload, Image as ImageIcon } from 'lucide-react';
 import { useToast } from '@/components/Toast';
-import Image from 'next/image';
 
 interface Experience {
   id: number;
@@ -15,6 +14,60 @@ interface Experience {
   description?: string;
   logo_url?: string;
   sort_order: number;
+}
+
+// Mengubah file gambar menjadi Data URL terkompresi (menjaga rasio asli landscape/portrait/persegi)
+// Digunakan sebagai fallback otomatis jika Supabase Storage menolak upload karena RLS.
+async function fileToCompressedDataUrl(file: File, maxDim = 240): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Gagal membaca file gambar'));
+    reader.onload = () => {
+      const img = new window.Image();
+      img.onerror = () => reject(new Error('Format gambar tidak didukung'));
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(reader.result as string);
+          return;
+        }
+        ctx.clearRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+        // Gunakan PNG agar transparansi logo tetap terjaga
+        resolve(canvas.toDataURL('image/png', 0.9));
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadOrInlineLogo(file: File): Promise<string> {
+  try {
+    const fileExt = (file.name.split('.').pop() || 'png').replace(/[^a-zA-Z0-9]/g, '');
+    const fileName = `experience_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.${fileExt}`;
+    const { error: uploadError } = await supabase.storage.from('portfolio_images').upload(fileName, file);
+    if (!uploadError) {
+      const { data: { publicUrl } } = supabase.storage.from('portfolio_images').getPublicUrl(fileName);
+      if (publicUrl) return publicUrl;
+    }
+  } catch {
+    // Lanjut ke fallback Data URL
+  }
+  return await fileToCompressedDataUrl(file, 240);
 }
 
 export default function ExperienceManager() {
@@ -31,7 +84,9 @@ export default function ExperienceManager() {
   const [yearRange, setYearRange] = useState('');
   const [description, setDescription] = useState('');
   const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string>('');
   const [editLogoFile, setEditLogoFile] = useState<File | null>(null);
+  const [editLogoPreview, setEditLogoPreview] = useState<string>('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editFileInputRef = useRef<HTMLInputElement>(null);
@@ -50,34 +105,62 @@ export default function ExperienceManager() {
     setLoading(false);
   }
 
+  const handleSelectNewLogo = async (file: File | null) => {
+    setLogoFile(file);
+    if (file) {
+      const preview = await fileToCompressedDataUrl(file, 240);
+      setLogoPreview(preview);
+    } else {
+      setLogoPreview('');
+    }
+  };
+
+  const handleSelectEditLogo = async (file: File | null) => {
+    setEditLogoFile(file);
+    if (file) {
+      const preview = await fileToCompressedDataUrl(file, 240);
+      setEditLogoPreview(preview);
+    } else {
+      setEditLogoPreview('');
+    }
+  };
+
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
 
     try {
-      let logoUrl = null;
+      let logoUrl: string | null = null;
       if (logoFile) {
-        const fileExt = logoFile.name.split('.').pop();
-        const fileName = `experience_${Math.random()}.${fileExt}`;
-        const { error: uploadError } = await supabase.storage.from('portfolio_images').upload(fileName, logoFile);
-        if (uploadError) throw uploadError;
-        
-        const { data: { publicUrl } } = supabase.storage.from('portfolio_images').getPublicUrl(fileName);
-        logoUrl = publicUrl;
+        logoUrl = await uploadOrInlineLogo(logoFile);
       }
 
-      const { error } = await supabase.from('portfolio_experiences').insert([{
-        title, company, type, year_range: yearRange, description: description || null,
-        sort_order: list.length, logo_url: logoUrl
-      }]);
+      const payload: Record<string, any> = {
+        title,
+        company,
+        type,
+        year_range: yearRange,
+        description: description || null,
+        sort_order: list.length,
+        logo_url: logoUrl,
+      };
+
+      let { error } = await supabase.from('portfolio_experiences').insert([payload]);
+
+      // Jika kolom logo_url belum ada di tabel Supabase, beri peringatan jelas
+      if (error && error.message?.includes('logo_url')) {
+        toast('Kolom logo_url belum ada di Supabase. Jalankan ulang file supabase_contact_setup.sql di Supabase SQL Editor!', 'error');
+        setSaving(false);
+        return;
+      }
 
       if (error) throw error;
 
       setTitle(''); setCompany(''); setType('Organisasi'); setYearRange(''); setDescription('');
-      setLogoFile(null);
+      setLogoFile(null); setLogoPreview('');
       if (fileInputRef.current) fileInputRef.current.value = '';
       fetchData();
-      toast('Experience ditambahkan!', 'success');
+      toast('Pengalaman berhasil ditambahkan!', 'success');
     } catch (err: any) {
       toast('Gagal: ' + err.message, 'error');
     }
@@ -96,7 +179,7 @@ export default function ExperienceManager() {
     }
   }
 
-  function startEdit(item: any) {
+  function startEdit(item: Experience) {
     setEditingId(item.id);
     setEditData({ 
       title: item.title, 
@@ -107,35 +190,40 @@ export default function ExperienceManager() {
       logo_url: item.logo_url || ''
     });
     setEditLogoFile(null);
+    setEditLogoPreview(item.logo_url || '');
   }
 
   async function saveEdit(id: number) {
     setSaving(true);
     try {
-      let logoUrl = editData.logo_url;
+      let logoUrl = editData.logo_url || null;
 
       if (editLogoFile) {
-        const fileExt = editLogoFile.name.split('.').pop();
-        const fileName = `experience_${Math.random()}.${fileExt}`;
-        const { error: uploadError } = await supabase.storage.from('portfolio_images').upload(fileName, editLogoFile);
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage.from('portfolio_images').getPublicUrl(fileName);
-        logoUrl = publicUrl;
+        logoUrl = await uploadOrInlineLogo(editLogoFile);
       }
 
       const { error } = await supabase.from('portfolio_experiences').update({
-        title: editData.title, company: editData.company, type: editData.type,
-        year_range: editData.year_range, description: editData.description || null,
-        logo_url: logoUrl || null
+        title: editData.title,
+        company: editData.company,
+        type: editData.type,
+        year_range: editData.year_range,
+        description: editData.description || null,
+        logo_url: logoUrl,
       }).eq('id', id);
+
+      if (error && error.message?.includes('logo_url')) {
+        toast('Kolom logo_url belum ada di Supabase. Jalankan file supabase_contact_setup.sql di Supabase SQL Editor!', 'error');
+        setSaving(false);
+        return;
+      }
 
       if (error) throw error;
 
       setEditingId(null);
       setEditLogoFile(null);
+      setEditLogoPreview('');
       fetchData();
-      toast('Perubahan disimpan!', 'success');
+      toast('Perubahan beserta logo berhasil disimpan!', 'success');
     } catch (err: any) {
       toast('Gagal: ' + err.message, 'error');
     }
@@ -161,7 +249,9 @@ export default function ExperienceManager() {
           <Briefcase className="text-cyan-500" />
           Manage Experience
         </h1>
-        <p className="text-zinc-400 mt-1 text-sm">Kelola timeline pengalaman kerja & organisasi dengan logo.</p>
+        <p className="text-zinc-400 mt-1 text-sm">
+          Kelola timeline pengalaman kerja &amp; organisasi. Mendukung semua ukuran logo (landscape, portrait, maupun persegi).
+        </p>
       </div>
 
       {/* ADD FORM */}
@@ -210,13 +300,13 @@ export default function ExperienceManager() {
                 className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-cyan-500" />
             </div>
             <div>
-              <label className="block text-xs font-mono text-zinc-500 mb-1">Logo Instansi</label>
-              <div className="flex items-center gap-3">
+              <label className="block text-xs font-mono text-zinc-500 mb-1">Logo Instansi (Bebas Landscape / Portrait / Persegi)</label>
+              <div className="flex flex-wrap items-center gap-3">
                 <input 
                   type="file" 
                   ref={fileInputRef} 
                   accept="image/*"
-                  onChange={e => setLogoFile(e.target.files?.[0] || null)}
+                  onChange={e => handleSelectNewLogo(e.target.files?.[0] || null)}
                   className="hidden" 
                   id="logo-upload"
                 />
@@ -224,18 +314,28 @@ export default function ExperienceManager() {
                   htmlFor="logo-upload" 
                   className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-sm cursor-pointer transition-colors border border-zinc-700/50"
                 >
-                  <Upload size={16} /> Pilih File
+                  <Upload size={16} /> Pilih File Logo
                 </label>
-                {logoFile && (
-                  <span className="text-xs text-cyan-400 font-mono truncate max-w-[200px]">
-                    {logoFile.name}
-                  </span>
+                {logoPreview && (
+                  <div className="flex items-center gap-2">
+                    <div className="h-11 min-w-[44px] max-w-[96px] px-2 py-1 rounded-lg bg-white/95 border border-zinc-700 flex items-center justify-center">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={logoPreview} alt="Preview" className="max-h-9 max-w-[80px] w-auto h-auto object-contain" />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleSelectNewLogo(null)}
+                      className="text-xs text-red-400 hover:underline"
+                    >
+                      Batal
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
           </div>
           <button type="submit" disabled={saving}
-            className="w-full sm:w-auto px-6 py-2 bg-cyan-500 hover:bg-cyan-400 text-black font-bold rounded-lg transition-colors text-sm disabled:opacity-50">
+            className="w-full sm:w-auto px-6 py-2 bg-cyan-500 hover:bg-cyan-400 text-black font-bold rounded-lg transition-colors text-sm disabled:opacity-50 cursor-pointer">
             {saving ? "Menyimpan..." : "Tambah"}
           </button>
         </form>
@@ -278,60 +378,69 @@ export default function ExperienceManager() {
                     <textarea value={editData.description} onChange={e => setEditData({...editData, description: e.target.value})}
                       rows={2} className="w-full bg-zinc-900 border border-cyan-500/50 rounded-lg px-3 py-2 text-white text-sm outline-none" />
                     
-                    <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-                      <div className="flex items-center gap-3">
-                        <input 
-                          type="file" 
-                          ref={editFileInputRef} 
-                          accept="image/*"
-                          onChange={e => setEditLogoFile(e.target.files?.[0] || null)}
-                          className="hidden" 
-                          id={`edit-logo-${item.id}`}
-                        />
-                        <label 
-                          htmlFor={`edit-logo-${item.id}`}
-                          className="flex items-center gap-2 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs cursor-pointer transition-colors border border-zinc-700/50"
-                        >
-                          <Upload size={14} /> Ganti Logo
-                        </label>
-                        {editLogoFile && (
-                          <span className="text-xs text-cyan-400 font-mono truncate max-w-[150px]">
-                            {editLogoFile.name}
-                          </span>
-                        )}
-                      </div>
-                      {editData.logo_url && !editLogoFile && (
-                        <button 
-                          type="button" 
-                          onClick={() => setEditData({...editData, logo_url: ''})}
-                          className="text-xs text-red-400 hover:underline"
-                        >
-                          Hapus Logo Saat Ini
-                        </button>
+                    <div className="flex flex-wrap gap-3 items-center">
+                      <input 
+                        type="file" 
+                        ref={editFileInputRef} 
+                        accept="image/*"
+                        onChange={e => handleSelectEditLogo(e.target.files?.[0] || null)}
+                        className="hidden" 
+                        id={`edit-logo-${item.id}`}
+                      />
+                      <label 
+                        htmlFor={`edit-logo-${item.id}`}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs cursor-pointer transition-colors border border-zinc-700/50"
+                      >
+                        <Upload size={14} /> Pilih / Ganti Logo
+                      </label>
+
+                      {(editLogoPreview || editData.logo_url) && (
+                        <div className="flex items-center gap-2">
+                          <div className="h-11 min-w-[44px] max-w-[96px] px-2 py-1 rounded-lg bg-white/95 border border-zinc-700 flex items-center justify-center">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={editLogoPreview || editData.logo_url}
+                              alt="Preview Logo"
+                              className="max-h-9 max-w-[80px] w-auto h-auto object-contain"
+                            />
+                          </div>
+                          <button 
+                            type="button" 
+                            onClick={() => {
+                              setEditData({...editData, logo_url: ''});
+                              setEditLogoFile(null);
+                              setEditLogoPreview('');
+                            }}
+                            className="text-xs text-red-400 hover:underline cursor-pointer"
+                          >
+                            Hapus Logo
+                          </button>
+                        </div>
                       )}
                     </div>
 
                     <div className="flex gap-2">
-                      <button onClick={() => saveEdit(item.id)} disabled={saving} className="px-4 py-1.5 bg-emerald-500 text-black rounded-lg text-sm font-bold flex items-center gap-1"><Check size={14} /> Simpan</button>
-                      <button onClick={() => setEditingId(null)} className="px-4 py-1.5 bg-zinc-800 text-zinc-300 rounded-lg text-sm flex items-center gap-1"><X size={14} /> Batal</button>
+                      <button onClick={() => saveEdit(item.id)} disabled={saving} className="px-4 py-1.5 bg-emerald-500 text-black rounded-lg text-sm font-bold flex items-center gap-1 cursor-pointer"><Check size={14} /> {saving ? 'Menyimpan...' : 'Simpan'}</button>
+                      <button onClick={() => setEditingId(null)} className="px-4 py-1.5 bg-zinc-800 text-zinc-300 rounded-lg text-sm flex items-center gap-1 cursor-pointer"><X size={14} /> Batal</button>
                     </div>
                   </div>
                 ) : (
                   <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                    {/* Logo Preview in list */}
-                    <div className="w-10 h-10 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center shrink-0 overflow-hidden relative">
-                      {item.logo_url ? (
-                        <Image 
-                          src={item.logo_url} 
-                          alt={item.company} 
-                          fill 
-                          sizes="40px" 
-                          className="object-cover"
+                    {/* Logo Preview in list (adaptif landscape/portrait/persegi) */}
+                    {item.logo_url ? (
+                      <div className="h-12 min-w-[48px] max-w-[96px] px-2 py-1 rounded-lg bg-white/95 border border-zinc-700 flex items-center justify-center shrink-0 overflow-hidden">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={item.logo_url}
+                          alt={item.company}
+                          className="max-h-10 max-w-[84px] w-auto h-auto object-contain"
                         />
-                      ) : (
+                      </div>
+                    ) : (
+                      <div className="w-11 h-11 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center shrink-0">
                         <ImageIcon className="text-zinc-600" size={18} />
-                      )}
-                    </div>
+                      </div>
+                    )}
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -344,19 +453,19 @@ export default function ExperienceManager() {
                     <div className="flex items-center gap-1 shrink-0">
                       <button onClick={() => moveItem(item.id, 'up')} disabled={idx === 0}
                         aria-label={`Pindah ${item.title} ke atas`}
-                        className="p-1.5 text-zinc-500 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors disabled:opacity-20" title="Move Up">
+                        className="p-1.5 text-zinc-500 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors disabled:opacity-20 cursor-pointer" title="Move Up">
                         <ArrowUp size={14} />
                       </button>
                       <button onClick={() => moveItem(item.id, 'down')} disabled={idx === list.length - 1}
                         aria-label={`Pindah ${item.title} ke bawah`}
-                        className="p-1.5 text-zinc-500 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors disabled:opacity-20" title="Move Down">
+                        className="p-1.5 text-zinc-500 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors disabled:opacity-20 cursor-pointer" title="Move Down">
                         <ArrowDown size={14} />
                       </button>
-                      <button onClick={() => startEdit(item)} className="p-2 text-zinc-500 hover:text-cyan-400 hover:bg-cyan-400/10 rounded-lg transition-colors" title="Edit"
+                      <button onClick={() => startEdit(item)} className="p-2 text-zinc-500 hover:text-cyan-400 hover:bg-cyan-400/10 rounded-lg transition-colors cursor-pointer" title="Edit"
                         aria-label={`Edit ${item.title}`}>
                         <Pencil size={16} />
                       </button>
-                      <button onClick={() => handleDelete(item.id)} className="p-2 text-zinc-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors" title="Delete"
+                      <button onClick={() => handleDelete(item.id)} className="p-2 text-zinc-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors cursor-pointer" title="Delete"
                         aria-label={`Hapus ${item.title}`}>
                         <Trash2 size={16} />
                       </button>

@@ -1,10 +1,8 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Briefcase, Building2, Users, ChevronLeft, ChevronRight, type LucideIcon } from 'lucide-react';
+import { Building2, Users, ChevronLeft, ChevronRight, type LucideIcon } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import Image from 'next/image';
 
 interface Experience {
   id: number;
@@ -25,10 +23,9 @@ const typeIcons: Record<string, LucideIcon> = {
 export default function Experience() {
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [page, setPage] = useState(0);
-  const [error, setError] = useState(false);
 
   useEffect(() => {
-    async function fetch() {
+    async function fetchExp() {
       try {
         const { data, error: fetchError } = await supabase
           .from('portfolio_experiences')
@@ -38,13 +35,12 @@ export default function Experience() {
         if (data) setExperiences(data);
       } catch (err) {
         console.error('Error fetching experiences:', err);
-        setError(true);
       }
     }
-    fetch();
+    fetchExp();
   }, []);
 
-  const perPage = 3;
+  const perPage = 4;
   const totalPages = Math.ceil(experiences.length / perPage);
   const visible = experiences.slice(page * perPage, page * perPage + perPage);
 
@@ -52,37 +48,37 @@ export default function Experience() {
 
   return (
     <section id="experience" className="space-y-12">
-      <motion.div
-        initial={{ opacity: 0, x: -20 }}
-        whileInView={{ opacity: 1, x: 0 }}
-        viewport={{ once: true }}
-        className="space-y-4"
-      >
-        <div className="flex items-center justify-between">
-          <div className="space-y-3">
-            <h2 className="text-3xl md:text-4xl font-bold text-white">Pengalaman</h2>
-            <div className="w-12 h-0.5 bg-cyan-500" />
-          </div>
-
-          {/* Pagination arrows */}
-          {totalPages > 1 && (
-            <div className="flex items-center gap-2">
-              <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}
-                className="p-2 rounded-lg bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-                <ChevronLeft size={18} />
-              </button>
-              <span className="text-xs text-zinc-500 font-mono">{page + 1}/{totalPages}</span>
-              <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1}
-                className="p-2 rounded-lg bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-                <ChevronRight size={18} />
-              </button>
-            </div>
-          )}
+      <div className="flex items-center justify-between">
+        <div className="space-y-3">
+          <h2 className="text-3xl md:text-4xl font-bold text-white">Pengalaman</h2>
+          <div className="w-12 h-0.5 bg-cyan-500" />
         </div>
-      </motion.div>
+
+        {totalPages > 1 && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={page === 0}
+              aria-label="Halaman pengalaman sebelumnya"
+              className="p-2 rounded-lg bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <span className="text-xs text-zinc-500 font-mono">{page + 1}/{totalPages}</span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+              disabled={page >= totalPages - 1}
+              aria-label="Halaman pengalaman berikutnya"
+              className="p-2 rounded-lg bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+        )}
+      </div>
 
       <div className="relative">
-        {/* Vertical line */}
+        {/* Garis vertikal timeline */}
         <div className="absolute left-[19px] md:left-[23px] top-0 bottom-0 w-px bg-zinc-800" />
 
         <div className="space-y-6">
@@ -90,31 +86,28 @@ export default function Experience() {
             const Icon = typeIcons[exp.type] || Users;
 
             return (
-              <div
-                key={exp.id}
-                className="relative pl-12 md:pl-16 group"
-              >
-                {/* Timeline dot */}
+              <div key={exp.id} className="relative pl-12 md:pl-16 group">
+                {/* Titik timeline */}
                 <div className="absolute left-[13px] md:left-[17px] top-3 w-[13px] h-[13px] rounded-full bg-cyan-500 ring-4 ring-[#0a0a0a] z-10" />
 
-                {/* Card */}
+                {/* Kartu pengalaman */}
                 <div className="p-5 md:p-6 bg-zinc-900/60 border border-zinc-800 rounded-xl hover:border-zinc-700 transition-colors">
                   <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-                    <div className="w-11 h-11 rounded-lg bg-zinc-950 border border-zinc-800 flex items-center justify-center shrink-0 overflow-hidden relative">
-                      {exp.logo_url ? (
-                        <Image 
-                          src={exp.logo_url} 
-                          alt={exp.company} 
-                          fill 
-                          sizes="44px" 
-                          className="object-cover"
+                    {/* Wadah logo adaptif: mendukung logo landscape, portrait, maupun persegi tanpa terpotong */}
+                    {exp.logo_url ? (
+                      <div className="h-14 min-w-[56px] max-w-[112px] px-2.5 py-1.5 rounded-lg bg-white/95 border border-zinc-700 flex items-center justify-center shrink-0 overflow-hidden">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={exp.logo_url}
+                          alt={exp.company}
+                          className="max-h-11 max-w-[96px] w-auto h-auto object-contain"
                         />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-cyan-400 font-bold text-lg font-sans">
-                          {exp.company ? exp.company.charAt(0).toUpperCase() : <Icon size={20} />}
-                        </div>
-                      )}
-                    </div>
+                      </div>
+                    ) : (
+                      <div className="w-12 h-12 rounded-lg bg-zinc-950 border border-zinc-800 flex items-center justify-center shrink-0 text-cyan-400 font-bold text-lg">
+                        {exp.company ? exp.company.charAt(0).toUpperCase() : <Icon size={20} />}
+                      </div>
+                    )}
 
                     <div className="flex-1 min-w-0 space-y-2">
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
@@ -126,13 +119,13 @@ export default function Experience() {
 
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-sm text-cyan-400 font-medium">{exp.company}</span>
-                        <span className="text-xs px-2 py-0.5 bg-zinc-800/50 text-zinc-500 rounded border border-zinc-800 font-mono">
+                        <span className="text-xs px-2 py-0.5 bg-zinc-800/50 text-zinc-400 rounded border border-zinc-800 font-mono">
                           {exp.type}
                         </span>
                       </div>
 
                       {exp.description && (
-                        <p className="text-sm text-zinc-400 leading-relaxed">{exp.description}</p>
+                        <p className="text-sm text-zinc-400 leading-relaxed whitespace-pre-line">{exp.description}</p>
                       )}
                     </div>
                   </div>
