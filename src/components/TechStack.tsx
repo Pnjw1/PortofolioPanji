@@ -12,6 +12,20 @@ interface Tech {
   logo_url?: string | null;
 }
 
+// Keahlian tambahan sesuai CV ATS resmi jika belum ada di tabel Supabase
+const cvFallbackSkills: Tech[] = [
+  { name: 'Figma', icon_name: 'Layout', category: 'Desain & Kreatif (DKV)', color_class: 'text-cyan-400' },
+  { name: 'Adobe Illustrator', icon_name: 'Layout', category: 'Desain & Kreatif (DKV)', color_class: 'text-cyan-400' },
+  { name: 'Adobe Photoshop', icon_name: 'Layout', category: 'Desain & Kreatif (DKV)', color_class: 'text-cyan-400' },
+  { name: 'Inkscape', icon_name: 'Layout', category: 'Desain & Kreatif (DKV)', color_class: 'text-cyan-400' },
+  { name: 'Canva', icon_name: 'Layout', category: 'Desain & Kreatif (DKV)', color_class: 'text-cyan-400' },
+  { name: 'Content Creation & Media Sosial', icon_name: 'Layout', category: 'Desain & Kreatif (DKV)', color_class: 'text-cyan-400' },
+  { name: 'AI-Assisted Development', icon_name: 'Wand2', category: 'Perangkat AI & Vibe Coding', color_class: 'text-cyan-400' },
+  { name: 'Prompt Engineering', icon_name: 'Wand2', category: 'Perangkat AI & Vibe Coding', color_class: 'text-cyan-400' },
+  { name: 'Microsoft Office (Word, Excel, PowerPoint)', icon_name: 'Layout', category: 'Aplikasi Perkantoran', color_class: 'text-cyan-400' },
+  { name: 'Google Workspace (Docs, Sheets, Slides)', icon_name: 'Layout', category: 'Aplikasi Perkantoran', color_class: 'text-cyan-400' },
+];
+
 export default function TechStack() {
   const [technologies, setTechnologies] = useState<Tech[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,25 +38,16 @@ export default function TechStack() {
           .select('*')
           .order('created_at', { ascending: false });
         if (error) throw error;
-        if (data) {
-          const hasContentCreator = data.some(
-            (t) => t.name.toLowerCase().includes('content')
-          );
-          const list = hasContentCreator
-            ? data
-            : [
-                ...data,
-                {
-                  name: 'Content Creation',
-                  icon_name: 'Layout',
-                  category: 'Kreatif & Media',
-                  color_class: 'text-cyan-400',
-                },
-              ];
-          setTechnologies(list);
-        }
+        const dbItems = data || [];
+        const existingNames = new Set(dbItems.map((t) => t.name.toLowerCase()));
+        const merged = [
+          ...dbItems,
+          ...cvFallbackSkills.filter((s) => !existingNames.has(s.name.toLowerCase())),
+        ];
+        setTechnologies(merged);
       } catch (err) {
         console.error('Error fetching tech stack:', err);
+        setTechnologies(cvFallbackSkills);
       } finally {
         setLoading(false);
       }
@@ -61,7 +66,7 @@ export default function TechStack() {
   return (
     <section className="space-y-10">
       <div className="space-y-3">
-        <h2 className="text-3xl md:text-4xl font-bold text-white">Teknologi & Keahlian</h2>
+        <h2 className="text-3xl md:text-4xl font-bold text-white">Teknologi &amp; Keahlian</h2>
         <div className="w-12 h-0.5 bg-cyan-500" />
       </div>
 

@@ -1,28 +1,27 @@
 "use client";
 
-import { motion } from 'framer-motion';
-import { Terminal, MapPin, Briefcase, GraduationCap, Video } from 'lucide-react';
+import { MapPin, Briefcase, GraduationCap, Video } from 'lucide-react';
 
 const highlights = [
   {
     icon: <MapPin size={18} className="text-cyan-400" />,
     label: "Lokasi",
-    value: "Jatinangor, Jawa Barat, Indonesia",
+    value: "Jatinangor, Sumedang, Jawa Barat",
   },
   {
     icon: <GraduationCap size={18} className="text-cyan-400" />,
     label: "Pendidikan",
-    value: "Lulusan SMK 2026, Jurusan TJKT",
+    value: "SMKS PGRI Jatinangor — TJKT (2026)",
   },
   {
     icon: <Briefcase size={18} className="text-cyan-400" />,
     label: "Fokus",
-    value: "Fullstack web (Vibe Coding) dan desain visual (DKV)",
+    value: "Web Developer, DKV & Content Creator",
   },
   {
     icon: <Video size={18} className="text-cyan-400" />,
-    label: "Konten",
-    value: "Content Creator",
+    label: "Media Sosial",
+    value: "@info.cintamulya · @karta.cintamulya · @petacipajaran",
   },
 ];
 
@@ -41,26 +40,26 @@ export default function About() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          className="space-y-4 text-zinc-300 leading-relaxed"
-        >
+        <div className="space-y-4 text-zinc-300 leading-relaxed">
           <p>
-            Saya Panji Wiguna, lulusan SMK jurusan Teknik Jaringan Komputer dan Telekomunikasi (TJKT) tahun 2026,
-            tinggal di Jatinangor.
+            Saya Panji Wiguna, lulusan <strong className="text-white font-semibold">SMKS PGRI Jatinangor</strong> jurusan
+            Teknik Jaringan Komputer dan Telekomunikasi (TJKT) tahun 2026, berdomisili di Jatinangor, Sumedang.
           </p>
           <p>
-            Saya membuat situs web dan aplikasi dengan bantuan AI (vibe coding). Arsitektur, desain, pengujian,
-            dan keamanan tetap saya tentukan dan periksa sendiri. Dasar desain saya datang dari Desain Komunikasi
-            Visual (DKV), dan dasar jaringan saya dari TJKT.
+            Saya membangun aplikasi web modern menggunakan Next.js, React, TypeScript, Tailwind CSS, dan Supabase dengan
+            dukungan perangkat AI (vibe coding) dalam proses pengembangan, mulai dari perancangan antarmuka, dashboard
+            CMS, hingga penerapan SEO dan keamanan aplikasi.
           </p>
           <p>
-            Selain itu saya membuat konten. Proyek terbaru saya adalah sistem informasi untuk Karang Taruna yang
-            sudah berjalan di <a href="https://kartacintamulya.org" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">kartacintamulya.org</a>.
+            Di bidang <strong className="text-white font-semibold">Content Creation &amp; Desain Komunikasi Visual (DKV)</strong>,
+            saya mengelola perencanaan konten, desain publikasi, dan komunikasi visual pada akun Instagram masyarakat dan
+            organisasi seperti{' '}
+            <a href="https://instagram.com/info.cintamulya" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">@info.cintamulya</a>,{' '}
+            <a href="https://instagram.com/karta.cintamulya" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">@karta.cintamulya</a>, dan{' '}
+            <a href="https://instagram.com/petacipajaran" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">@petacipajaran</a>,
+            serta membangun situs <a href="https://kartacintamulya.org" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">kartacintamulya.org</a>.
           </p>
-        </motion.div>
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {highlights.map((item) => (

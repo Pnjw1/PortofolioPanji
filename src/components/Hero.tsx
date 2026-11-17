@@ -237,10 +237,11 @@ export default function Hero() {
             Lihat Proyek
           </a>
           <a
-            href="/cv"
+            href="/CV_Panji_Wiguna.pdf"
+            download="CV_Panji_Wiguna.pdf"
             className="px-5 py-3 bg-zinc-900 text-zinc-200 border border-zinc-700 rounded-lg font-medium hover:border-cyan-500 hover:text-cyan-400 transition-colors"
           >
-            Lihat CV
+            Unduh CV (PDF)
           </a>
 
           <div className="flex gap-3">

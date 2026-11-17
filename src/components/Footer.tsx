@@ -13,11 +13,11 @@ const socialLinks = [
 ];
 
 const navLinks = [
-  { label: 'Tentang', href: '#about' },
-  { label: 'Proyek', href: '#projects' },
-  { label: 'Blog', href: '/blog' },
-  { label: 'CV', href: '/cv' },
-  { label: 'Kontak', href: '#contact' },
+  { label: 'Tentang', href: '#about', download: false },
+  { label: 'Proyek', href: '#projects', download: false },
+  { label: 'Blog', href: '/blog', download: false },
+  { label: 'Unduh CV', href: '/CV_Panji_Wiguna.pdf', download: true },
+  { label: 'Kontak', href: '#contact', download: false },
 ];
 
 export default function Footer() {
@@ -56,6 +56,7 @@ export default function Footer() {
                 <a
                   key={link.label}
                   href={link.href}
+                  download={link.download ? "CV_Panji_Wiguna.pdf" : undefined}
                   onClick={(e) => handleAnchorClick(e, link.href)}
                   className="text-sm text-zinc-400 hover:text-cyan-400 transition-colors w-fit"
                 >

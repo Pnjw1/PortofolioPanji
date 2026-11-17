@@ -13,7 +13,7 @@ const navLinks = [
   { label: "Proyek", href: "#projects" },
   { label: "Sertifikat", href: "#certificates" },
   { label: "Blog", href: "/blog" },
-  { label: "CV", href: "/cv" },
+  { label: "Unduh CV", href: "/CV_Panji_Wiguna.pdf", download: true },
   { label: "Kontak", href: "#contact" },
 ];
 
@@ -73,6 +73,7 @@ export default function Navbar() {
                 <a
                   key={link.label}
                   href={link.href}
+                  download={link.download ? "CV_Panji_Wiguna.pdf" : undefined}
                   onClick={(e) => handleLinkClick(e, link.href)}
                   className="px-4 py-2 text-sm font-medium text-zinc-400 hover:text-white hover:bg-white/5 rounded-lg transition-all duration-200 relative group"
                 >
@@ -118,6 +119,7 @@ export default function Navbar() {
                 <a
                   key={link.label}
                   href={link.href}
+                  download={link.download ? "CV_Panji_Wiguna.pdf" : undefined}
                   onClick={(e) => handleLinkClick(e, link.href)}
                   className="px-4 py-3 text-sm text-zinc-300 hover:text-white hover:bg-white/5 rounded-lg transition-all duration-200 font-medium"
                 >

@@ -83,31 +83,24 @@ export default function Experience() {
 
       <div className="relative">
         {/* Vertical line */}
-        <div className="absolute left-[19px] md:left-[23px] top-0 bottom-0 w-px bg-gradient-to-b from-cyan-500/50 via-purple-500/50 to-emerald-500/50" />
+        <div className="absolute left-[19px] md:left-[23px] top-0 bottom-0 w-px bg-zinc-800" />
 
-        <div className="space-y-8">
-          {visible.map((exp, index) => {
-            const colors = ['bg-cyan-500', 'bg-emerald-500', 'bg-purple-500', 'bg-amber-500', 'bg-pink-500'];
-            const gradients = ['from-cyan-500 to-blue-500', 'from-emerald-500 to-green-500', 'from-purple-500 to-fuchsia-500', 'from-amber-500 to-orange-500', 'from-pink-500 to-rose-500'];
-            const dotColor = colors[(page * perPage + index) % colors.length];
-            const gradientColor = gradients[(page * perPage + index) % gradients.length];
+        <div className="space-y-6">
+          {visible.map((exp) => {
             const Icon = typeIcons[exp.type] || Users;
 
             return (
-              <motion.div
+              <div
                 key={exp.id}
-                initial={{ opacity: 0, x: -30 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.15 }}
                 className="relative pl-12 md:pl-16 group"
               >
                 {/* Timeline dot */}
-                <div className={`absolute left-[12px] md:left-[16px] top-2 w-[15px] h-[15px] rounded-full ${dotColor} ring-4 ring-[#0a0a0a] z-10 group-hover:scale-125 transition-transform`} />
+                <div className="absolute left-[13px] md:left-[17px] top-3 w-[13px] h-[13px] rounded-full bg-cyan-500 ring-4 ring-[#0a0a0a] z-10" />
 
                 {/* Card */}
-                <div className="p-5 md:p-6 bg-[#1e1e1e] border border-zinc-800 rounded-2xl hover:border-zinc-700 transition-all duration-300 group-hover:-translate-y-1">
+                <div className="p-5 md:p-6 bg-zinc-900/60 border border-zinc-800 rounded-xl hover:border-zinc-700 transition-colors">
                   <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-                    <div className="w-11 h-11 rounded-xl bg-zinc-900 border border-zinc-800/80 flex items-center justify-center shrink-0 overflow-hidden relative">
+                    <div className="w-11 h-11 rounded-lg bg-zinc-950 border border-zinc-800 flex items-center justify-center shrink-0 overflow-hidden relative">
                       {exp.logo_url ? (
                         <Image 
                           src={exp.logo_url} 
@@ -117,7 +110,7 @@ export default function Experience() {
                           className="object-cover"
                         />
                       ) : (
-                        <div className={`w-full h-full bg-gradient-to-br ${gradientColor} flex items-center justify-center text-white font-bold text-lg font-sans`}>
+                        <div className="w-full h-full flex items-center justify-center text-cyan-400 font-bold text-lg font-sans">
                           {exp.company ? exp.company.charAt(0).toUpperCase() : <Icon size={20} />}
                         </div>
                       )}
@@ -144,7 +137,7 @@ export default function Experience() {
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             );
           })}
         </div>
