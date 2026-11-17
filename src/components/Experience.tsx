@@ -59,11 +59,8 @@ export default function Experience() {
         className="space-y-4"
       >
         <div className="flex items-center justify-between">
-          <div className="space-y-4">
-            <h2 className="text-3xl md:text-4xl font-bold flex items-center gap-3">
-              <Briefcase className="text-cyan-400" size={32} />
-              <span>Experience</span>
-            </h2>
+          <div className="space-y-3">
+            <h2 className="text-3xl md:text-4xl font-bold text-white">Pengalaman</h2>
             <div className="w-12 h-0.5 bg-cyan-500" />
           </div>
 

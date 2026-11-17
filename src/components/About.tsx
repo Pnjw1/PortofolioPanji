@@ -35,18 +35,10 @@ const stats = [
 export default function About() {
   return (
     <section className="space-y-12">
-      <motion.div
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        viewport={{ once: true }}
-        className="space-y-4"
-      >
-        <h2 className="text-3xl md:text-4xl font-bold flex items-center gap-3">
-          <Terminal className="text-cyan-400" size={32} aria-hidden="true" />
-          <span>Tentang Saya</span>
-        </h2>
+      <div className="space-y-3">
+        <h2 className="text-3xl md:text-4xl font-bold text-white">Tentang Saya</h2>
         <div className="w-12 h-0.5 bg-cyan-500" />
-      </motion.div>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
         <motion.div

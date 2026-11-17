@@ -3,23 +3,45 @@ import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { SITE } from '@/lib/site';
 import nodemailer from 'nodemailer';
 
-const MAX_PER_EMAIL_PER_MINUTE = 3;
-const MAX_TOTAL_PER_MINUTE = 10;
+const COOLDOWN_MS = 60 * 1000; // 1 pesan per 60 detik per IP / email
+const MAX_TOTAL_PER_MINUTE = 5;
 
-// Rate limit memakai RPC SECURITY DEFINER (lihat supabase_contact_setup.sql).
-// Jika fungsi RPC belum dipasang di Supabase, fallback ke tidak memblokir agar form tetap berfungsi.
-async function isRateLimited(email: string): Promise<boolean> {
+// Layer 1: In-memory cooldown per IP dan per email (langsung memblokir spam beruntun dalam beberapa detik)
+const recentSubmissions = new Map<string, number>();
+
+function isMemoryRateLimited(key: string): boolean {
+  const now = Date.now();
+  // Bersihkan entri lama yang sudah lewat cooldown
+  for (const [k, timestamp] of recentSubmissions.entries()) {
+    if (now - timestamp > COOLDOWN_MS) {
+      recentSubmissions.delete(k);
+    }
+  }
+  const lastTime = recentSubmissions.get(key);
+  if (lastTime && now - lastTime < COOLDOWN_MS) {
+    return true;
+  }
+  return false;
+}
+
+function recordMemorySubmission(ipKey: string, emailKey: string) {
+  const now = Date.now();
+  recentSubmissions.set(ipKey, now);
+  recentSubmissions.set(emailKey, now);
+}
+
+// Layer 2: Rate limit persistent via Supabase RPC (bekerja lintas serverless instance)
+async function isDbRateLimited(email: string): Promise<boolean> {
   try {
     const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase.rpc('recent_message_counts', { p_email: email });
     if (error || !data || !data[0]) {
-      console.warn('Rate limit RPC belum tersedia atau gagal:', error?.code);
       return false;
     }
     const { email_count, total_count } = data[0];
-    return email_count >= MAX_PER_EMAIL_PER_MINUTE || total_count >= MAX_TOTAL_PER_MINUTE;
-  } catch (err) {
-    console.warn('Rate limit check error:', err);
+    // Maksimal 1 pesan per menit per email, atau 5 pesan total per menit
+    return email_count >= 1 || total_count >= MAX_TOTAL_PER_MINUTE;
+  } catch {
     return false;
   }
 }
@@ -42,9 +64,11 @@ function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-function getClientIp(req: Request): string | undefined {
+function getClientIp(req: Request): string {
   const forwarded = req.headers.get('x-forwarded-for');
-  return forwarded ? forwarded.split(',')[0].trim() : undefined;
+  if (forwarded) return forwarded.split(',')[0].trim();
+  const realIp = req.headers.get('x-real-ip');
+  return realIp ? realIp.trim() : 'unknown-ip';
 }
 
 export async function POST(req: Request) {
@@ -87,6 +111,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Format email tidak valid' }, { status: 400 });
     }
 
+    const ip = getClientIp(req);
+    const ipKey = `ip:${ip}`;
+    const emailKey = `email:${cleanEmail}`;
+
+    // Cek anti-spam Layer 1 (Memory) & Layer 2 (Supabase DB)
+    if (isMemoryRateLimited(ipKey) || isMemoryRateLimited(emailKey) || (await isDbRateLimited(cleanEmail))) {
+      return NextResponse.json(
+        { error: 'Harap tunggu 1 menit sebelum mengirim pesan lagi.' },
+        { status: 429 }
+      );
+    }
+
     // Verifikasi Turnstile jika TURNSTILE_SECRET_KEY diatur di environment
     const secretKey = process.env.TURNSTILE_SECRET_KEY;
     if (secretKey) {
@@ -95,8 +131,7 @@ export async function POST(req: Request) {
       }
 
       const verifyBody = new URLSearchParams({ secret: secretKey, response: token });
-      const ip = getClientIp(req);
-      if (ip) verifyBody.set('remoteip', ip);
+      if (ip !== 'unknown-ip') verifyBody.set('remoteip', ip);
 
       const turnstileVerify = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
         method: 'POST',
@@ -109,14 +144,10 @@ export async function POST(req: Request) {
       }
     }
 
-    if (await isRateLimited(cleanEmail)) {
-      return NextResponse.json(
-        { error: 'Terlalu banyak pesan. Coba lagi dalam 1 menit.' },
-        { status: 429 }
-      );
-    }
+    // Catat waktu pengiriman agar kiriman berikutnya dalam <60 detik langsung ditolak
+    recordMemorySubmission(ipKey, emailKey);
 
-    // 1. Simpan ke Supabase (jika tabel sudah dibuat)
+    // 1. Simpan ke Supabase
     const supabase = await createSupabaseServerClient();
     const { error: dbError } = await supabase
       .from('portfolio_messages')
@@ -165,7 +196,6 @@ export async function POST(req: Request) {
       }
     }
 
-    // Jika simpan DB gagal DAN email juga tidak terkirim, barulah kembalikan error
     if (dbError && !emailSent) {
       return NextResponse.json(
         { error: 'Terjadi kesalahan saat menyimpan pesan. Silakan coba lagi.' },

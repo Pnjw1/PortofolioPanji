@@ -57,18 +57,10 @@ export default function Projects() {
 
   return (
     <section id="projects" className="space-y-12">
-      <motion.div 
-        initial={{ opacity: 0, x: -20 }}
-        whileInView={{ opacity: 1, x: 0 }}
-        viewport={{ once: true }}
-        className="space-y-4"
-      >
-        <h2 className="text-3xl md:text-4xl font-bold flex items-center gap-3">
-          <Briefcase className="text-cyan-400" size={32} />
-          <span>Featured Projects</span>
-        </h2>
+      <div className="space-y-3">
+        <h2 className="text-3xl md:text-4xl font-bold text-white">Proyek Pilihan</h2>
         <div className="w-12 h-0.5 bg-cyan-500" />
-      </motion.div>
+      </div>
 
       {/* Loading Skeleton */}
       {loading && (

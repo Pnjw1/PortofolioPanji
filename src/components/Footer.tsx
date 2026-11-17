@@ -13,10 +13,11 @@ const socialLinks = [
 ];
 
 const navLinks = [
-  { label: 'About', href: '#about' },
-  { label: 'Projects', href: '#projects' },
+  { label: 'Tentang', href: '#about' },
+  { label: 'Proyek', href: '#projects' },
   { label: 'Blog', href: '/blog' },
-  { label: 'Contact', href: '#contact' },
+  { label: 'CV', href: '/cv' },
+  { label: 'Kontak', href: '#contact' },
 ];
 
 export default function Footer() {

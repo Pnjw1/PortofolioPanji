@@ -44,14 +44,12 @@ export default async function BlogPage({ searchParams }: Props) {
 
   const supabase = await createSupabaseServerClient();
 
-  // Get total count
   const { count } = await supabase
     .from('portfolio_posts')
     .select('*', { count: 'exact', head: true })
     .eq('is_published', true);
 
   const totalPosts = count || 0;
-  // Use 9 per page (3x3 on desktop, which shows 6 on mobile as 2x3)
   const perPage = 9;
   const totalPages = Math.max(1, Math.ceil(totalPosts / perPage));
   const safePage = Math.min(currentPage, totalPages);
@@ -65,12 +63,7 @@ export default async function BlogPage({ searchParams }: Props) {
 
   return (
     <main className="min-h-screen bg-[#0a0a0a] text-zinc-100">
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-cyan-900/10 blur-[150px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] rounded-full bg-purple-900/10 blur-[150px]" />
-      </div>
-
-      <div className="relative z-10 container mx-auto px-6 py-16 md:py-24 space-y-10">
+      <div className="container mx-auto px-6 py-16 md:py-24 space-y-10">
         {/* Back */}
         <Link href="/" className="inline-flex items-center gap-2 text-zinc-400 hover:text-cyan-400 transition-colors font-mono text-sm group">
           <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
@@ -78,18 +71,16 @@ export default async function BlogPage({ searchParams }: Props) {
         </Link>
 
         {/* Header */}
-        <div className="space-y-4">
-          <h1 className="text-4xl md:text-5xl font-bold">
-            Blog & <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">Artikel</span>
-          </h1>
-          <p className="text-zinc-400 max-w-xl">Tutorial, sharing pengalaman, dan insight seputar web development & teknologi.</p>
-          <div className="w-20 h-1 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full" />
+        <div className="space-y-3">
+          <h1 className="text-4xl md:text-5xl font-bold text-white">Blog &amp; Artikel</h1>
+          <div className="w-12 h-0.5 bg-cyan-500" />
+          <p className="text-zinc-400 max-w-xl">Catatan, pengalaman, dan pembahasan seputar pengembangan web dan teknologi.</p>
         </div>
 
         {/* Posts grid */}
         {(!posts || posts.length === 0) ? (
           <div className="text-center py-20 text-zinc-500">
-            <p className="text-lg">Belum ada artikel. Nantikan konten menarik! ✍️</p>
+            <p className="text-base">Belum ada artikel yang dipublikasikan.</p>
           </div>
         ) : (
           <>
@@ -98,7 +89,7 @@ export default async function BlogPage({ searchParams }: Props) {
                 <Link
                   key={post.id}
                   href={`/blog/${post.slug}`}
-                  className="group flex flex-col bg-[#1e1e1e] border border-zinc-800 rounded-2xl overflow-hidden hover:border-zinc-700 hover:-translate-y-1 transition-all duration-300"
+                  className="group flex flex-col bg-zinc-900/60 border border-zinc-800 rounded-xl overflow-hidden hover:border-zinc-700 transition-colors"
                 >
                   {post.cover_url && (
                     <div className="relative w-full aspect-video overflow-hidden">

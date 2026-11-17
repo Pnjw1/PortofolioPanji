@@ -7,13 +7,14 @@ import Image from "next/image";
 import { SITE } from "@/lib/site";
 
 const navLinks = [
-  { label: "About", href: "#about" },
-  { label: "Experience", href: "#experience" },
-  { label: "Tech Stack", href: "#tech" },
-  { label: "Projects", href: "#projects" },
-  { label: "Certificates", href: "#certificates" },
+  { label: "Tentang", href: "#about" },
+  { label: "Pengalaman", href: "#experience" },
+  { label: "Teknologi", href: "#tech" },
+  { label: "Proyek", href: "#projects" },
+  { label: "Sertifikat", href: "#certificates" },
   { label: "Blog", href: "/blog" },
-  { label: "Contact", href: "#contact" },
+  { label: "CV", href: "/cv" },
+  { label: "Kontak", href: "#contact" },
 ];
 
 export default function Navbar() {

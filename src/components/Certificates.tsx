@@ -38,10 +38,16 @@ export default function Certificates() {
           .order('created_at', { ascending: false });
         if (error) throw error;
         if (data) {
-          setCertificates(data);
+          // Sembunyikan entri "Professional Network / LinkedIn" yang bukan sertifikat
+          const filtered = data.filter(
+            (c) =>
+              c.issuer?.toLowerCase() !== 'linkedin' &&
+              c.title?.toLowerCase() !== 'professional network'
+          );
+          setCertificates(filtered);
 
           // For group-type certs, count how many children they have
-          const groupSlugs = data.filter(c => c.type === 'group').map(c => c.slug);
+          const groupSlugs = filtered.filter(c => c.type === 'group').map(c => c.slug);
           if (groupSlugs.length > 0) {
             const { data: children, error: childrenError } = await supabase
               .from('portfolio_certificates')
@@ -72,18 +78,10 @@ export default function Certificates() {
 
   return (
     <section className="space-y-12">
-      <motion.div 
-        initial={{ opacity: 0, x: -20 }}
-        whileInView={{ opacity: 1, x: 0 }}
-        viewport={{ once: true }}
-        className="space-y-4"
-      >
-        <h2 className="text-3xl md:text-4xl font-bold flex items-center gap-3">
-          <Award className="text-cyan-400" size={32} />
-          <span>Certifications & Badges</span>
-        </h2>
+      <div className="space-y-3">
+        <h2 className="text-3xl md:text-4xl font-bold text-white">Sertifikasi</h2>
         <div className="w-12 h-0.5 bg-cyan-500" />
-      </motion.div>
+      </div>
 
       <div className="space-y-8 min-h-[400px]">
         {/* Loading Skeleton */}
