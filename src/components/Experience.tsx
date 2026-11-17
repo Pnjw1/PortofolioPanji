@@ -20,6 +20,26 @@ const typeIcons: Record<string, LucideIcon> = {
   'Organisasi': Users,
 };
 
+// Mengekstrak logo jika disimpan sebagai fallback di dalam description (ketika kolom logo_url belum ada di DB)
+export function parseExperienceItem(item: Experience): Experience {
+  const rawDesc = item.description || '';
+  const match = rawDesc.match(/\n?<!--logo:(.+?)-->$/);
+  if (match) {
+    return {
+      ...item,
+      logo_url: item.logo_url || match[1],
+      description: rawDesc.replace(/\n?<!--logo:(.+?)-->$/, '').trim(),
+    };
+  }
+  return item;
+}
+
+export function embedLogoInDescription(description: string | null | undefined, logoUrl: string | null | undefined): string | null {
+  const cleanDesc = (description || '').replace(/\n?<!--logo:(.+?)-->$/, '').trim();
+  if (!logoUrl) return cleanDesc || null;
+  return cleanDesc ? `${cleanDesc}\n<!--logo:${logoUrl}-->` : `<!--logo:${logoUrl}-->`;
+}
+
 export default function Experience() {
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [page, setPage] = useState(0);
@@ -32,7 +52,7 @@ export default function Experience() {
           .select('*')
           .order('sort_order', { ascending: true });
         if (fetchError) throw fetchError;
-        if (data) setExperiences(data);
+        if (data) setExperiences(data.map(parseExperienceItem));
       } catch (err) {
         console.error('Error fetching experiences:', err);
       }

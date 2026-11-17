@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Briefcase, Trash2, Plus, Pencil, X, Check, ArrowUp, ArrowDown, Upload, Image as ImageIcon } from 'lucide-react';
 import { useToast } from '@/components/Toast';
+import { parseExperienceItem, embedLogoInDescription } from '@/components/Experience';
 
 interface Experience {
   id: number;
@@ -12,13 +13,12 @@ interface Experience {
   type: string;
   year_range: string;
   description?: string;
-  logo_url?: string;
+  logo_url?: string | null;
   sort_order: number;
 }
 
 // Mengubah file gambar menjadi Data URL terkompresi (menjaga rasio asli landscape/portrait/persegi)
-// Digunakan sebagai fallback otomatis jika Supabase Storage menolak upload karena RLS.
-async function fileToCompressedDataUrl(file: File, maxDim = 240): Promise<string> {
+async function fileToCompressedDataUrl(file: File, maxDim = 220): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = () => reject(new Error('Gagal membaca file gambar'));
@@ -46,7 +46,6 @@ async function fileToCompressedDataUrl(file: File, maxDim = 240): Promise<string
         }
         ctx.clearRect(0, 0, width, height);
         ctx.drawImage(img, 0, 0, width, height);
-        // Gunakan PNG agar transparansi logo tetap terjaga
         resolve(canvas.toDataURL('image/png', 0.9));
       };
       img.src = reader.result as string;
@@ -67,7 +66,7 @@ async function uploadOrInlineLogo(file: File): Promise<string> {
   } catch {
     // Lanjut ke fallback Data URL
   }
-  return await fileToCompressedDataUrl(file, 240);
+  return await fileToCompressedDataUrl(file, 220);
 }
 
 export default function ExperienceManager() {
@@ -98,7 +97,7 @@ export default function ExperienceManager() {
     try {
       const { data, error } = await supabase.from('portfolio_experiences').select('*').order('sort_order', { ascending: true });
       if (error) throw error;
-      if (data) setList(data);
+      if (data) setList(data.map(parseExperienceItem));
     } catch (err: any) {
       toast('Gagal mengambil data: ' + err.message, 'error');
     }
@@ -108,7 +107,7 @@ export default function ExperienceManager() {
   const handleSelectNewLogo = async (file: File | null) => {
     setLogoFile(file);
     if (file) {
-      const preview = await fileToCompressedDataUrl(file, 240);
+      const preview = await fileToCompressedDataUrl(file, 220);
       setLogoPreview(preview);
     } else {
       setLogoPreview('');
@@ -118,7 +117,7 @@ export default function ExperienceManager() {
   const handleSelectEditLogo = async (file: File | null) => {
     setEditLogoFile(file);
     if (file) {
-      const preview = await fileToCompressedDataUrl(file, 240);
+      const preview = await fileToCompressedDataUrl(file, 220);
       setEditLogoPreview(preview);
     } else {
       setEditLogoPreview('');
@@ -135,7 +134,8 @@ export default function ExperienceManager() {
         logoUrl = await uploadOrInlineLogo(logoFile);
       }
 
-      const payload: Record<string, any> = {
+      // Percobaan 1: simpan ke kolom logo_url
+      let { error } = await supabase.from('portfolio_experiences').insert([{
         title,
         company,
         type,
@@ -143,15 +143,21 @@ export default function ExperienceManager() {
         description: description || null,
         sort_order: list.length,
         logo_url: logoUrl,
-      };
+      }]);
 
-      let { error } = await supabase.from('portfolio_experiences').insert([payload]);
-
-      // Jika kolom logo_url belum ada di tabel Supabase, beri peringatan jelas
+      // Percobaan 2 (Fallback otomatis jika kolom logo_url belum ada di schema Supabase):
+      // Simpan logo di dalam description sehingga tetap 100% berhasil tanpa error!
       if (error && error.message?.includes('logo_url')) {
-        toast('Kolom logo_url belum ada di Supabase. Jalankan ulang file supabase_contact_setup.sql di Supabase SQL Editor!', 'error');
-        setSaving(false);
-        return;
+        const fallbackDesc = embedLogoInDescription(description, logoUrl);
+        const retry = await supabase.from('portfolio_experiences').insert([{
+          title,
+          company,
+          type,
+          year_range: yearRange,
+          description: fallbackDesc,
+          sort_order: list.length,
+        }]);
+        error = retry.error;
       }
 
       if (error) throw error;
@@ -160,7 +166,7 @@ export default function ExperienceManager() {
       setLogoFile(null); setLogoPreview('');
       if (fileInputRef.current) fileInputRef.current.value = '';
       fetchData();
-      toast('Pengalaman berhasil ditambahkan!', 'success');
+      toast('Pengalaman beserta logo berhasil ditambahkan!', 'success');
     } catch (err: any) {
       toast('Gagal: ' + err.message, 'error');
     }
@@ -202,7 +208,8 @@ export default function ExperienceManager() {
         logoUrl = await uploadOrInlineLogo(editLogoFile);
       }
 
-      const { error } = await supabase.from('portfolio_experiences').update({
+      // Percobaan 1: update dengan kolom logo_url
+      let { error } = await supabase.from('portfolio_experiences').update({
         title: editData.title,
         company: editData.company,
         type: editData.type,
@@ -211,10 +218,17 @@ export default function ExperienceManager() {
         logo_url: logoUrl,
       }).eq('id', id);
 
+      // Percobaan 2 (Fallback otomatis jika kolom logo_url belum ada di schema Supabase):
       if (error && error.message?.includes('logo_url')) {
-        toast('Kolom logo_url belum ada di Supabase. Jalankan file supabase_contact_setup.sql di Supabase SQL Editor!', 'error');
-        setSaving(false);
-        return;
+        const fallbackDesc = embedLogoInDescription(editData.description, logoUrl);
+        const retry = await supabase.from('portfolio_experiences').update({
+          title: editData.title,
+          company: editData.company,
+          type: editData.type,
+          year_range: editData.year_range,
+          description: fallbackDesc,
+        }).eq('id', id);
+        error = retry.error;
       }
 
       if (error) throw error;
@@ -399,7 +413,7 @@ export default function ExperienceManager() {
                           <div className="h-11 min-w-[44px] max-w-[96px] px-2 py-1 rounded-lg bg-white/95 border border-zinc-700 flex items-center justify-center">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
-                              src={editLogoPreview || editData.logo_url}
+                              src={editLogoPreview || editData.logo_url || ''}
                               alt="Preview Logo"
                               className="max-h-9 max-w-[80px] w-auto h-auto object-contain"
                             />
