@@ -1,31 +1,26 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { SITE } from '@/lib/site';
 import nodemailer from 'nodemailer';
 
 const MAX_PER_EMAIL_PER_MINUTE = 3;
 const MAX_TOTAL_PER_MINUTE = 10;
 
-type RateLimitResult = 'ok' | 'limited' | 'error';
-
-// Rate limit memakai RPC SECURITY DEFINER (lihat supabase_contact_ratelimit.sql)
-// karena pengunjung anonim tidak punya hak SELECT pada portfolio_messages.
-// Batas global ikut diperiksa agar mengganti-ganti email tidak melewati limit.
-async function checkRateLimit(email: string): Promise<RateLimitResult> {
+// Rate limit memakai RPC SECURITY DEFINER (lihat supabase_contact_setup.sql).
+// Jika fungsi RPC belum dipasang di Supabase, fallback ke tidak memblokir agar form tetap berfungsi.
+async function isRateLimited(email: string): Promise<boolean> {
   try {
     const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase.rpc('recent_message_counts', { p_email: email });
     if (error || !data || !data[0]) {
-      console.error('Rate limit RPC error:', error?.code);
-      return 'error';
+      console.warn('Rate limit RPC belum tersedia atau gagal:', error?.code);
+      return false;
     }
     const { email_count, total_count } = data[0];
-    if (email_count >= MAX_PER_EMAIL_PER_MINUTE || total_count >= MAX_TOTAL_PER_MINUTE) {
-      return 'limited';
-    }
-    return 'ok';
+    return email_count >= MAX_PER_EMAIL_PER_MINUTE || total_count >= MAX_TOTAL_PER_MINUTE;
   } catch (err) {
-    console.error('Rate limit check failed:', err);
-    return 'error';
+    console.warn('Rate limit check error:', err);
+    return false;
   }
 }
 
@@ -68,7 +63,6 @@ export async function POST(req: Request) {
     const { name, email, message, token, website } = body as Record<string, unknown>;
 
     // Honeypot: field ini tersembunyi untuk manusia. Bot biasanya mengisinya.
-    // Balas sukses agar bot tidak tahu ia terdeteksi.
     if (typeof website === 'string' && website.length > 0) {
       return NextResponse.json({ success: true, message: 'Pesan berhasil terkirim' });
     }
@@ -93,59 +87,48 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Format email tidak valid' }, { status: 400 });
     }
 
-    if (typeof token !== 'string' || !token) {
-      return NextResponse.json({ error: 'Captcha token tidak ditemukan' }, { status: 400 });
-    }
-
-    // Captcha: fail closed. Tanpa secret key, request ditolak (tidak ada fallback test key).
+    // Verifikasi Turnstile jika TURNSTILE_SECRET_KEY diatur di environment
     const secretKey = process.env.TURNSTILE_SECRET_KEY;
-    if (!secretKey) {
-      console.error('TURNSTILE_SECRET_KEY belum diatur. Form kontak dinonaktifkan.');
-      return NextResponse.json({ error: 'Layanan sedang tidak tersedia' }, { status: 503 });
+    if (secretKey) {
+      if (typeof token !== 'string' || !token) {
+        return NextResponse.json({ error: 'Harap selesaikan verifikasi captcha' }, { status: 400 });
+      }
+
+      const verifyBody = new URLSearchParams({ secret: secretKey, response: token });
+      const ip = getClientIp(req);
+      if (ip) verifyBody.set('remoteip', ip);
+
+      const turnstileVerify = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: verifyBody,
+      });
+      const turnstileResult = await turnstileVerify.json();
+      if (!turnstileResult.success) {
+        return NextResponse.json({ error: 'Verifikasi captcha gagal' }, { status: 403 });
+      }
     }
 
-    const verifyBody = new URLSearchParams({ secret: secretKey, response: token });
-    const ip = getClientIp(req);
-    if (ip) verifyBody.set('remoteip', ip);
-
-    const turnstileVerify = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: verifyBody,
-    });
-    const turnstileResult = await turnstileVerify.json();
-    if (!turnstileResult.success) {
-      return NextResponse.json({ error: 'Verifikasi captcha gagal' }, { status: 403 });
-    }
-
-    const rate = await checkRateLimit(cleanEmail);
-    if (rate === 'limited') {
+    if (await isRateLimited(cleanEmail)) {
       return NextResponse.json(
         { error: 'Terlalu banyak pesan. Coba lagi dalam 1 menit.' },
         { status: 429 }
       );
     }
-    if (rate === 'error') {
-      // Fail closed: lebih baik menolak sementara daripada membuka celah spam.
-      return NextResponse.json({ error: 'Layanan sedang tidak tersedia' }, { status: 503 });
-    }
 
-    // Simpan data apa adanya. Escape dilakukan saat output (React di admin, escapeHtml di email).
+    // 1. Simpan ke Supabase (jika tabel sudah dibuat)
     const supabase = await createSupabaseServerClient();
     const { error: dbError } = await supabase
       .from('portfolio_messages')
       .insert([{ name: cleanName, email: cleanEmail, message: cleanMessage }]);
 
     if (dbError) {
-      console.error('Supabase insert error:', dbError.code, dbError.hint);
-      return NextResponse.json(
-        { error: 'Terjadi kesalahan. Silakan coba lagi nanti.' },
-        { status: 500 }
-      );
+      console.error('Supabase insert error:', dbError.code, dbError.message);
     }
 
-    // Notifikasi email bersifat tambahan. Pesan sudah tersimpan, jadi kegagalan email tidak menggagalkan request.
-    const receiver = process.env.CONTACT_RECEIVER_EMAIL;
+    // 2. Kirim notifikasi email (default penerima ke SITE.email)
+    const receiver = process.env.CONTACT_RECEIVER_EMAIL || SITE.email;
+    let emailSent = false;
     if (process.env.EMAIL_USER && process.env.EMAIL_PASS && receiver) {
       try {
         const transporter = nodemailer.createTransport({
@@ -176,11 +159,18 @@ export async function POST(req: Request) {
             </div>
           `,
         });
+        emailSent = true;
       } catch (mailError) {
         console.error('Gagal mengirim email notifikasi:', mailError);
       }
-    } else {
-      console.warn('EMAIL_USER, EMAIL_PASS, atau CONTACT_RECEIVER_EMAIL belum diatur. Email tidak dikirim.');
+    }
+
+    // Jika simpan DB gagal DAN email juga tidak terkirim, barulah kembalikan error
+    if (dbError && !emailSent) {
+      return NextResponse.json(
+        { error: 'Terjadi kesalahan saat menyimpan pesan. Silakan coba lagi.' },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ success: true, message: 'Pesan berhasil terkirim' });

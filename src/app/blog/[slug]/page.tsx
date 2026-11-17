@@ -11,7 +11,8 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  const slug = decodeURIComponent(rawSlug);
   const supabase = await createSupabaseServerClient();
   const { data: post } = await supabase
     .from('portfolio_posts')
@@ -155,7 +156,8 @@ function readingTime(content: string) {
 }
 
 export default async function BlogPostPage({ params }: Props) {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  const slug = decodeURIComponent(rawSlug);
   const supabase = await createSupabaseServerClient();
   const { data: post } = await supabase
     .from('portfolio_posts')

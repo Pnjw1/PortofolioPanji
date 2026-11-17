@@ -9,7 +9,8 @@ import { useParams } from 'next/navigation';
 
 export default function CertificateGroupPage() {
   const params = useParams();
-  const slug = params.slug as string;
+  const rawSlug = params.slug as string;
+  const slug = rawSlug ? decodeURIComponent(rawSlug) : '';
   
   const [parent, setParent] = useState<any>(null);
   const [children, setChildren] = useState<any[]>([]);

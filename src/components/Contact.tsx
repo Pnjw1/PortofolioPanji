@@ -31,7 +31,7 @@ export default function Contact() {
       return;
     }
 
-    if (!turnstileToken) {
+    if (turnstileSiteKey && !turnstileToken) {
       toast('Harap selesaikan verifikasi captcha!', 'error');
       return;
     }
@@ -186,9 +186,9 @@ export default function Contact() {
                   />
                 </div>
                 
-                {/* Cloudflare Turnstile */}
-                <div className="flex justify-center py-2">
-                  {turnstileSiteKey ? (
+                {/* Cloudflare Turnstile (aktif otomatis jika NEXT_PUBLIC_TURNSTILE_SITE_KEY diatur) */}
+                {turnstileSiteKey && (
+                  <div className="flex justify-center py-2">
                     <Turnstile 
                       ref={turnstileRef}
                       siteKey={turnstileSiteKey} 
@@ -196,14 +196,12 @@ export default function Contact() {
                       onExpire={() => setTurnstileToken(null)}
                       options={{ theme: 'dark' }}
                     />
-                  ) : (
-                    <p className="text-xs text-zinc-500">Form belum tersedia. Silakan hubungi lewat email.</p>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 <button 
                   type="submit" 
-                  disabled={loading || !turnstileToken}
+                  disabled={loading || (Boolean(turnstileSiteKey) && !turnstileToken)}
                   className="w-full py-3 bg-cyan-500 text-zinc-950 font-bold rounded-xl flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50 transition-all"
                 >
                   {loading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}

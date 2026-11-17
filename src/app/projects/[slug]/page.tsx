@@ -10,7 +10,8 @@ import { useParams } from 'next/navigation';
 
 export default function ProjectDetailPage() {
   const params = useParams();
-  const slug = params.slug as string;
+  const rawSlug = params.slug as string;
+  const slug = rawSlug ? decodeURIComponent(rawSlug) : '';
 
   const [project, setProject] = useState<any>(null);
   const [images, setImages] = useState<any[]>([]);
