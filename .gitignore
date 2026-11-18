@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# supabase sql scripts (hanya untuk lokal / SQL Editor, jangan di-upload ke GitHub)
+supabase_*.sql
