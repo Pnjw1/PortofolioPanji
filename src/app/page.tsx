@@ -1,41 +1,105 @@
 import Hero from '@/components/Hero';
+import Projects from '@/components/Projects';
+import Services from '@/components/Services';
+import Experience from '@/components/Experience';
 import About from '@/components/About';
 import TechStack from '@/components/TechStack';
-import Experience from '@/components/Experience';
-import Projects from '@/components/Projects';
 import Certificates from '@/components/Certificates';
 import Testimonials from '@/components/Testimonials';
 import Contact from '@/components/Contact';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
 
-export default function Home() {
+export const revalidate = 60;
+
+export default async function Home() {
+  const supabase = await createSupabaseServerClient();
+
+  const [
+    projectsRes,
+    experiencesRes,
+    techRes,
+    certsRes,
+    allChildCertsRes,
+    testimonialsRes,
+  ] = await Promise.all([
+    supabase.from('portfolio_projects').select('*').order('created_at', { ascending: false }),
+    supabase.from('portfolio_experiences').select('*').order('sort_order', { ascending: true }),
+    supabase.from('portfolio_tech').select('*').order('created_at', { ascending: false }),
+    supabase.from('portfolio_certificates').select('*').is('parent_slug', null).order('created_at', { ascending: false }),
+    supabase.from('portfolio_certificates').select('parent_slug').not('parent_slug', 'is', null),
+    supabase.from('portfolio_testimonials').select('*').order('created_at', { ascending: false }),
+  ]);
+
+  const projects = projectsRes.data || [];
+  const experiences = experiencesRes.data || [];
+  const technologies = techRes.data || [];
+  const certificates = (certsRes.data || []).filter(
+    (c) =>
+      c.issuer?.toLowerCase() !== 'linkedin' &&
+      c.title?.toLowerCase() !== 'professional network'
+  );
+
+  const childCounts: Record<string, number> = {};
+  (allChildCertsRes.data || []).forEach((c) => {
+    if (c.parent_slug) {
+      childCounts[c.parent_slug] = (childCounts[c.parent_slug] || 0) + 1;
+    }
+  });
+
+  const testimonials = testimonialsRes.data || [];
+
   return (
     <main id="main-content" className="min-h-screen bg-[#0a0a0a] text-zinc-100 font-sans selection:bg-cyan-500/30 overflow-hidden relative">
       <Navbar />
 
-      <div className="relative z-10 container mx-auto px-6 pt-28 pb-12 md:pt-32 md:pb-24 space-y-32">
+      {/* Urutan Beranda Prioritas 4:
+          1. Hero
+          2. Proyek Pilihan (#projects)
+          3. Layanan (#services)
+          4. Pengalaman (#experience)
+          5. Tentang & Keahlian Utama (#about, #tech)
+          6. Sertifikasi (#certificates) — hanya jika ada data
+          7. Testimoni (#testimonials) — hanya jika ada data
+          8. Kontak (#contact) */}
+      <div className="relative z-10 container mx-auto px-6 pt-28 pb-12 md:pt-32 md:pb-24 space-y-28">
         <section id="hero">
           <Hero />
         </section>
+
+        <section id="projects">
+          <Projects initialProjects={projects} />
+        </section>
+
+        <section id="services">
+          <Services />
+        </section>
+
+        <section id="experience">
+          <Experience initialExperiences={experiences} />
+        </section>
+
         <section id="about">
           <About />
         </section>
-        <section id="experience">
-          <Experience />
-        </section>
+
         <section id="tech">
-          <TechStack />
+          <TechStack initialTechnologies={technologies} />
         </section>
-        <section id="projects">
-          <Projects />
-        </section>
-        <section id="certificates">
-          <Certificates />
-        </section>
-        <section id="testimonials">
-          <Testimonials />
-        </section>
+
+        {certificates.length > 0 && (
+          <section id="certificates">
+            <Certificates initialCertificates={certificates} initialChildCounts={childCounts} />
+          </section>
+        )}
+
+        {testimonials.length > 0 && (
+          <section id="testimonials">
+            <Testimonials initialTestimonials={testimonials} />
+          </section>
+        )}
+
         <section id="contact">
           <Contact />
         </section>
@@ -45,4 +109,3 @@ export default function Home() {
     </main>
   );
 }
-

@@ -7,14 +7,14 @@ import Image from "next/image";
 import { SITE } from "@/lib/site";
 
 const navLinks = [
-  { label: "Tentang", href: "#about" },
-  { label: "Pengalaman", href: "#experience" },
-  { label: "Teknologi", href: "#tech" },
   { label: "Proyek", href: "#projects" },
+  { label: "Layanan", href: "#services" },
+  { label: "Pengalaman", href: "#experience" },
+  { label: "Tentang", href: "#about" },
+  { label: "Keahlian", href: "#tech" },
   { label: "Sertifikat", href: "#certificates" },
   { label: "Blog", href: "/blog" },
   { label: "Unduh CV", href: "/CV_Panji_Wiguna.pdf", download: true },
-  { label: "Kontak", href: "#contact" },
 ];
 
 export default function Navbar() {
@@ -41,10 +41,7 @@ export default function Navbar() {
 
   return (
     <>
-      <motion.nav
-        initial={{ y: -100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
+      <nav
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           scrolled
             ? "bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-zinc-800/50 shadow-lg shadow-black/20"
@@ -60,10 +57,10 @@ export default function Navbar() {
               className="flex items-center gap-2 group"
             >
               <div className="w-9 h-9 bg-zinc-800/80 border border-zinc-700/50 rounded-lg flex items-center justify-center overflow-hidden group-hover:border-cyan-500/40 transition-all duration-300">
-                <Image src="/images/favicon.svg" alt="Logo" width={28} height={28} />
+                <Image src="/images/favicon.svg" alt="Logo Panji Wiguna" width={28} height={28} />
               </div>
               <span className="font-mono text-sm font-bold text-white group-hover:text-cyan-400 transition-colors duration-300">
-                panjiwiguna.dev
+                panjiwiguna
               </span>
             </a>
 
@@ -102,7 +99,7 @@ export default function Navbar() {
             </button>
           </div>
         </div>
-      </motion.nav>
+      </nav>
 
       {/* Mobile Dropdown Menu */}
       <AnimatePresence>
@@ -113,7 +110,7 @@ export default function Navbar() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className="fixed top-16 left-0 right-0 z-40 bg-[#0a0a0a]/95 backdrop-blur-xl border-b border-zinc-800 shadow-xl md:hidden"
+            className="fixed top-16 left-0 right-0 z-40 max-h-[calc(100vh-4rem)] overflow-y-auto bg-[#0a0a0a]/95 backdrop-blur-xl border-b border-zinc-800 shadow-xl md:hidden"
           >
             <div className="container mx-auto px-6 py-4 flex flex-col gap-1">
               {navLinks.map((link) => (

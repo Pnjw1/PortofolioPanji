@@ -26,6 +26,30 @@ export default function Contact() {
     return () => clearInterval(timer);
   }, [cooldown]);
 
+  // Menangkap klik "Minta Penawaran" dari seksi Layanan untuk mengisi subjek pesan otomatis
+  useEffect(() => {
+    const handlePrefill = (e: Event) => {
+      const custom = e as CustomEvent<{ service?: string }>;
+      const srv = custom.detail?.service;
+      if (!srv) return;
+      const prefix = `[Permintaan Penawaran: ${srv}]\nHalo Panji, saya ingin mendiskusikan proyek `;
+      setFormData((prev) => ({
+        ...prev,
+        message: prev.message.startsWith('[Permintaan Penawaran:')
+          ? prefix
+          : prev.message
+          ? `${prefix}\n\n${prev.message}`
+          : prefix,
+      }));
+      setTimeout(() => {
+        const msgInput = document.getElementById('contact-message') as HTMLTextAreaElement | null;
+        msgInput?.focus();
+      }, 400);
+    };
+    window.addEventListener('prefill-contact', handlePrefill);
+    return () => window.removeEventListener('prefill-contact', handlePrefill);
+  }, []);
+
   const handleCopyEmail = async () => {
     try {
       await navigator.clipboard.writeText(SITE.email);
@@ -114,24 +138,22 @@ export default function Contact() {
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-zinc-200">Kontak Langsung</h3>
 
-          {/* Email card: klik untuk salin email + tombol buka Gmail langsung */}
+          {/* Email sebagai mailto: standar + tombol salin */}
           <div className="w-full p-4 bg-zinc-900 border border-zinc-800 hover:border-cyan-500/40 rounded-xl flex items-center justify-between gap-3 transition-colors">
-            <button
-              type="button"
-              onClick={handleCopyEmail}
-              className="flex items-center gap-3 text-left flex-1 min-w-0 cursor-pointer group"
-              title="Klik untuk menyalin alamat email"
+            <a
+              href={`mailto:${SITE.email}`}
+              className="flex items-center gap-3 text-left flex-1 min-w-0 group"
             >
               <div className="p-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-cyan-400 group-hover:border-cyan-500/40 transition-colors shrink-0">
                 <Mail size={18} />
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-mono text-zinc-500">Email (Klik untuk salin)</p>
+                <p className="text-xs font-mono text-zinc-400">Email</p>
                 <p className="text-sm font-medium text-zinc-100 group-hover:text-cyan-400 transition-colors truncate">
                   {SITE.email}
                 </p>
               </div>
-            </button>
+            </a>
 
             <div className="flex items-center gap-1.5 shrink-0">
               <button
@@ -143,19 +165,10 @@ export default function Contact() {
                 {copiedEmail ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
                 <span>{copiedEmail ? 'Tersalin' : 'Salin'}</span>
               </button>
-              <a
-                href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(SITE.email)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-2.5 py-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/30 hover:bg-cyan-500/20 text-xs font-mono text-cyan-400 flex items-center gap-1 transition-colors"
-                title="Tulis email lewat Gmail di browser"
-              >
-                <span>Gmail</span>
-                <ExternalLink size={12} />
-              </a>
             </div>
           </div>
           
+          {/* Tombol Chat WhatsApp tanpa menampilkan nomor mentah di teks */}
           <a 
             href={SITE.whatsapp}
             target="_blank"
@@ -167,14 +180,14 @@ export default function Contact() {
                 <Phone size={18} />
               </div>
               <div>
-                <p className="text-xs font-mono text-zinc-500">WhatsApp</p>
+                <p className="text-xs font-mono text-zinc-400">Pesan Instan</p>
                 <p className="text-sm font-medium text-zinc-100 group-hover:text-cyan-400 transition-colors">
-                  +62 888-0940-9219
+                  Chat WhatsApp
                 </p>
               </div>
             </div>
             <span className="text-xs font-mono text-cyan-400 flex items-center gap-1 shrink-0">
-              Chat <ExternalLink size={12} />
+              Buka <ExternalLink size={12} />
             </span>
           </a>
 
@@ -189,7 +202,7 @@ export default function Contact() {
                 <Code2 size={18} />
               </div>
               <div>
-                <p className="text-xs font-mono text-zinc-500">Google Developers</p>
+                <p className="text-xs font-mono text-zinc-400">Google Developers</p>
                 <p className="text-sm font-medium text-zinc-100 group-hover:text-cyan-400 transition-colors">
                   g.dev/panjiwiguna
                 </p>
@@ -206,7 +219,7 @@ export default function Contact() {
           <h3 className="text-lg font-semibold text-white mb-4">Kirim Pesan</h3>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="contact-name" className="block text-xs font-mono text-zinc-400 mb-1">Nama</label>
+              <label htmlFor="contact-name" className="block text-xs font-mono text-zinc-300 mb-1">Nama</label>
               <input 
                 id="contact-name"
                 type="text" 
@@ -218,7 +231,7 @@ export default function Contact() {
               />
             </div>
             <div>
-              <label htmlFor="contact-email" className="block text-xs font-mono text-zinc-400 mb-1">Email</label>
+              <label htmlFor="contact-email" className="block text-xs font-mono text-zinc-300 mb-1">Email</label>
               <input 
                 id="contact-email"
                 type="email" 
@@ -230,7 +243,7 @@ export default function Contact() {
               />
             </div>
             <div>
-              <label htmlFor="contact-message" className="block text-xs font-mono text-zinc-400 mb-1">Pesan</label>
+              <label htmlFor="contact-message" className="block text-xs font-mono text-zinc-300 mb-1">Pesan</label>
               <textarea 
                 id="contact-message"
                 value={formData.message}
@@ -240,7 +253,7 @@ export default function Contact() {
                 maxLength={1000}
                 className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white text-sm outline-none focus:border-cyan-500 transition-colors resize-none"
               />
-              <p className="text-xs text-zinc-600 text-right font-mono mt-1">{formData.message.length}/1000</p>
+              <p className="text-xs text-zinc-400 text-right font-mono mt-1">{formData.message.length}/1000</p>
             </div>
 
             {/* Honeypot: tersembunyi untuk pengguna, hanya terisi oleh bot */}

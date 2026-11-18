@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { getProjectSlug } from '@/lib/project-case-studies';
 
 const SITE_URL = 'https://panjiwiguna.vercel.app';
 
@@ -12,12 +13,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .select('slug, updated_at')
     .eq('is_published', true);
 
-  // Fetch all detail projects
+  // Fetch all projects for case study pages
   const { data: projects } = await supabase
     .from('portfolio_projects')
-    .select('slug, created_at')
-    .eq('type', 'detail')
-    .not('slug', 'is', null);
+    .select('id, title, slug, created_at');
 
   // Fetch all group certificates
   const { data: certGroups } = await supabase
@@ -34,7 +33,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   const projectEntries: MetadataRoute.Sitemap = (projects || []).map((project) => ({
-    url: `${SITE_URL}/projects/${project.slug}`,
+    url: `${SITE_URL}/projects/${encodeURIComponent(getProjectSlug(project))}`,
     lastModified: new Date(project.created_at || new Date()),
     changeFrequency: 'monthly',
     priority: 0.8,

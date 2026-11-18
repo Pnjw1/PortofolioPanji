@@ -408,8 +408,8 @@ export default function ArticleReader({
       )}
 
       <div className="max-w-3xl mx-auto px-5 sm:px-6 py-14 md:py-20">
-        {/* Navigasi Atas */}
-        <div className="flex items-center justify-between gap-4 mb-10">
+        {/* Navigasi Atas (Responsif di layar kecil) */}
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-10">
           <Link
             href="/blog"
             className="inline-flex items-center gap-2 text-zinc-400 hover:text-cyan-400 transition-colors font-mono text-xs sm:text-sm group"
@@ -418,7 +418,7 @@ export default function ArticleReader({
             Jurnal &amp; Catatan
           </Link>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
             {/* Tombol Gaya Huruf (Sans / Serif) */}
             <button
               type="button"

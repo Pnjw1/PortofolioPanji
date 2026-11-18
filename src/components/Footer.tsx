@@ -13,8 +13,11 @@ const socialLinks = [
 ];
 
 const navLinks = [
-  { label: 'Tentang', href: '#about', download: false },
   { label: 'Proyek', href: '#projects', download: false },
+  { label: 'Layanan', href: '#services', download: false },
+  { label: 'Pengalaman', href: '#experience', download: false },
+  { label: 'Tentang', href: '#about', download: false },
+  { label: 'Keahlian', href: '#tech', download: false },
   { label: 'Blog', href: '/blog', download: false },
   { label: 'Unduh CV', href: '/CV_Panji_Wiguna.pdf', download: true },
   { label: 'Kontak', href: '#contact', download: false },
@@ -39,18 +42,18 @@ export default function Footer() {
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <div className="w-9 h-9 bg-zinc-800/80 border border-zinc-700/50 rounded-lg flex items-center justify-center overflow-hidden">
-                <Image src="/images/favicon.svg" alt="Logo" width={28} height={28} />
+                <Image src="/images/favicon.svg" alt="Logo Panji Wiguna" width={28} height={28} />
               </div>
-              <span className="font-mono text-sm font-bold text-white">panjiwiguna.dev</span>
+              <span className="font-mono text-sm font-bold text-white">panjiwiguna</span>
             </div>
-            <p className="text-sm text-zinc-500 leading-relaxed max-w-xs">
-              Fullstack Developer (Vibe Coding) &amp; Visual Communication Designer (DKV) based in Jatinangor, Indonesia.
+            <p className="text-sm text-zinc-400 leading-relaxed max-w-xs">
+              Web Developer &amp; Desainer Komunikasi Visual (DKV) berbasis di Jatinangor, Indonesia.
             </p>
           </div>
 
           {/* Quick Links */}
           <div className="space-y-3">
-            <h4 className="text-xs font-mono text-zinc-500 uppercase tracking-widest">Navigasi</h4>
+            <h4 className="text-xs font-mono text-zinc-400 uppercase tracking-widest">Navigasi</h4>
             <nav className="flex flex-col gap-2">
               {navLinks.map((link) => (
                 <a
@@ -68,7 +71,7 @@ export default function Footer() {
 
           {/* Social */}
           <div className="space-y-3">
-            <h4 className="text-xs font-mono text-zinc-500 uppercase tracking-widest">Connect</h4>
+            <h4 className="text-xs font-mono text-zinc-400 uppercase tracking-widest">Connect</h4>
             <div className="flex gap-3">
               {socialLinks.map((social) => (
                 <a
@@ -88,11 +91,11 @@ export default function Footer() {
 
         {/* Bottom */}
         <div className="mt-10 pt-6 border-t border-zinc-800/50 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-zinc-600 font-mono">
+          <p className="text-xs text-zinc-400 font-mono">
             &copy; {new Date().getFullYear()} Panji Wiguna. All rights reserved.
           </p>
-          <p className="text-xs text-zinc-600 font-mono">
-            Built with <span className="text-cyan-500">Next.js</span> &amp; <span className="text-purple-400">Supabase</span>
+          <p className="text-xs text-zinc-400 font-mono">
+            Built with <span className="text-cyan-400">Next.js</span> &amp; <span className="text-zinc-200">Supabase</span>
           </p>
         </div>
       </div>

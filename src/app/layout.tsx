@@ -18,27 +18,9 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://panjiwiguna.vercel.app"),
-  title: "Panji Wiguna — Fullstack Developer & Visual Designer",
+  title: "Panji Wiguna — Web Developer & Desainer Komunikasi Visual (DKV)",
   description:
-    "Fullstack Developer (Vibe Coding) & Visual Communication Designer (DKV) based in Jatinangor, Indonesia.",
-  keywords: [
-    "Panji Wiguna",
-    "Vibe Coding",
-    "Fullstack Developer",
-    "DKV",
-    "Visual Communication Design",
-    "Portfolio",
-    "Next.js",
-    "React",
-    "TypeScript",
-    "Supabase",
-    "Indonesia",
-    "Jatinangor",
-    "Sumedang",
-    "TJKT",
-    "Web Developer Indonesia",
-    "Frontend Developer",
-  ],
+    "Membangun aplikasi web modern yang cepat sekaligus merancang identitas visual dan konten digital yang rapi, menggabungkan logika pemrograman (TJKT) dengan kepekaan desain (DKV).",
   authors: [{ name: "Panji Wiguna" }],
   alternates: {
     canonical: "https://panjiwiguna.vercel.app",
@@ -49,8 +31,9 @@ export const metadata: Metadata = {
     apple: "/images/favicon.svg",
   },
   openGraph: {
-    title: "Panji Wiguna — Fullstack Developer & Visual Designer",
-    description: "Fullstack Developer (Vibe Coding) & Visual Communication Designer (DKV) based in Jatinangor, Indonesia.",
+    title: "Panji Wiguna — Web Developer & Desainer Komunikasi Visual (DKV)",
+    description:
+      "Membangun aplikasi web modern yang cepat sekaligus merancang identitas visual dan konten digital yang rapi, menggabungkan logika pemrograman (TJKT) dengan kepekaan desain (DKV).",
     url: "https://panjiwiguna.vercel.app",
     siteName: "Panji Wiguna Portfolio",
     type: "website",
@@ -60,14 +43,15 @@ export const metadata: Metadata = {
         url: "/images/og-banner.png",
         width: 1200,
         height: 630,
-        alt: "Panji Wiguna — Fullstack Developer & Visual Designer",
+        alt: "Panji Wiguna — Web Developer & Desainer Komunikasi Visual (DKV)",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Panji Wiguna — Fullstack Developer & Visual Designer",
-    description: "Fullstack Developer (Vibe Coding) & Visual Communication Designer (DKV) based in Jatinangor.",
+    title: "Panji Wiguna — Web Developer & Desainer Komunikasi Visual (DKV)",
+    description:
+      "Membangun aplikasi web modern yang cepat sekaligus merancang identitas visual dan konten digital yang rapi, menggabungkan logika pemrograman (TJKT) dengan kepekaan desain (DKV).",
     images: ["/images/og-banner.png"],
   },
 };
@@ -96,7 +80,7 @@ export default function RootLayout({
                 SITE.linkedin,
                 SITE.instagram
               ],
-              jobTitle: "Fullstack Developer & Visual Communication Designer",
+              jobTitle: "Web Developer & Desainer Komunikasi Visual (DKV)",
               worksFor: {
                 "@type": "Organization",
                 name: "Freelance"

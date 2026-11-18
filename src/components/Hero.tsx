@@ -50,15 +50,17 @@ function PendulumNameTag() {
   const ropePath = useTransform(ropeControlX, (cx) => `M 0 0 Q ${cx * 1.2} 44 0 80`);
 
   const handleDrag = useCallback((_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    if (reduceMotion) return;
     const angle = Math.max(-35, Math.min(35, info.offset.x * -0.25));
     swingAngle.set(angle);
-  }, [swingAngle]);
+  }, [swingAngle, reduceMotion]);
 
   const handleDragEnd = useCallback((_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    if (reduceMotion) return;
     const momentum = Math.max(-45, Math.min(45, info.velocity.x * 0.05));
     swingAngle.set(momentum);
     setTimeout(() => swingAngle.set(0), 100);
-  }, [swingAngle]);
+  }, [swingAngle, reduceMotion]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!containerRef.current || reduceMotion) return;
@@ -99,12 +101,12 @@ function PendulumNameTag() {
 
       {/* Kartu berayun dari titik tengah atas */}
       <motion.div
-        drag="x"
+        drag={reduceMotion ? false : "x"}
         dragConstraints={{ left: 0, right: 0 }}
         dragElastic={0}
         onDrag={handleDrag}
         onDragEnd={handleDragEnd}
-        style={{ rotate, transformOrigin: 'top center', x: 0 }}
+        style={{ rotate: reduceMotion ? 0 : rotate, transformOrigin: 'top center', x: 0 }}
         className="relative cursor-grab active:cursor-grabbing touch-none -mt-1"
       >
         {/* Klip logam */}
@@ -146,13 +148,13 @@ function PendulumNameTag() {
               <div className="flex-1 flex flex-col justify-center items-center px-4 space-y-1.5 text-center">
                 <h3 className="text-white font-bold text-xl md:text-2xl tracking-tight">Panji Wiguna</h3>
                 <p className="text-zinc-400 text-xs leading-relaxed">
-                  Fullstack Developer (Vibe Coding)<br />
-                  Content Creator &middot; Desainer Visual
+                  Web Developer &amp; Desainer<br />
+                  Komunikasi Visual (DKV)
                 </p>
               </div>
 
               <div className="px-5 py-3 border-t border-white/5 text-center">
-                <p className="text-zinc-500 text-[10px] font-mono">Jatinangor, Indonesia</p>
+                <p className="text-zinc-400 text-[10px] font-mono">Jatinangor, Indonesia</p>
               </div>
             </button>
 
@@ -186,7 +188,7 @@ function PendulumNameTag() {
         </div>
       </motion.div>
 
-      <p className="text-zinc-600 text-[10px] md:text-xs font-mono mt-4 text-center">
+      <p className="text-zinc-400 text-[10px] md:text-xs font-mono mt-4 text-center">
         <span className="hidden md:inline">Geser atau arahkan kursor untuk mengayunkan, klik untuk membalik</span>
         <span className="md:hidden">Geser untuk mengayunkan, ketuk untuk membalik</span>
       </p>
@@ -199,42 +201,27 @@ export default function Hero() {
     <section className="flex flex-col-reverse md:flex-row items-center justify-between gap-8 md:gap-6 min-h-[80vh]">
       {/* Teks */}
       <div className="flex-1 space-y-6">
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="space-y-4"
-        >
-          <p className="text-zinc-500 font-mono text-sm">Jatinangor, Indonesia</p>
+        <div className="space-y-4">
+          <p className="text-zinc-400 font-mono text-sm">Jatinangor, Indonesia</p>
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-white">
             Panji Wiguna
           </h1>
-          <p className="text-xl md:text-2xl text-zinc-300 leading-snug max-w-xl">
-            Fullstack Developer (Vibe Coding), Content Creator, dan Desainer Visual.
+          <p className="text-xl md:text-2xl text-cyan-400 font-semibold leading-snug max-w-xl">
+            Web Developer &amp; Desainer Komunikasi Visual (DKV)
           </p>
-        </motion.div>
+        </div>
 
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2, duration: 0.4 }}
-          className="text-zinc-400 text-base leading-relaxed max-w-xl"
-        >
-          Saya membangun situs web dan aplikasi dengan bantuan AI, serta membuat konten. Latar belakang saya di
-          Desain Komunikasi Visual (DKV) dan Teknik Jaringan Komputer dan Telekomunikasi (TJKT).
-        </motion.p>
+        <p className="text-zinc-300 text-base md:text-lg leading-relaxed max-w-xl">
+          Membangun aplikasi web modern yang cepat sekaligus merancang identitas visual dan konten digital yang rapi,
+          menggabungkan logika pemrograman (TJKT) dengan kepekaan desain (DKV).
+        </p>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3, duration: 0.4 }}
-          className="flex flex-wrap items-center gap-6 pt-2"
-        >
+        <div className="flex flex-wrap items-center gap-6 pt-2">
           <a
             href="#projects"
             className="px-6 py-3 bg-cyan-500 text-zinc-950 rounded-lg font-semibold hover:bg-cyan-400 transition-colors"
           >
-            Lihat Proyek
+            Lihat Karya
           </a>
           <a
             href="/CV_Panji_Wiguna.pdf"
@@ -253,18 +240,13 @@ export default function Hero() {
           </div>
 
           <VisitorCounter />
-        </motion.div>
+        </div>
       </div>
 
       {/* Kartu nama gantung */}
-      <motion.div
-        initial={{ opacity: 0, y: -24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="relative flex-1 flex justify-center"
-      >
+      <div className="relative flex-1 flex justify-center">
         <PendulumNameTag />
-      </motion.div>
+      </div>
     </section>
   );
 }

@@ -3,50 +3,37 @@ import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { SITE } from '@/lib/site';
 import nodemailer from 'nodemailer';
 
-const COOLDOWN_MS = 60 * 1000; // 1 pesan per 60 detik per IP / email
 const MAX_TOTAL_PER_MINUTE = 5;
 
-// Layer 1: In-memory cooldown per IP dan per email (langsung memblokir spam beruntun dalam beberapa detik)
-const recentSubmissions = new Map<string, number>();
-
-function isMemoryRateLimited(key: string): boolean {
-  const now = Date.now();
-  // Bersihkan entri lama yang sudah lewat cooldown
-  for (const [k, timestamp] of recentSubmissions.entries()) {
-    if (now - timestamp > COOLDOWN_MS) {
-      recentSubmissions.delete(k);
-    }
-  }
-  const lastTime = recentSubmissions.get(key);
-  if (lastTime && now - lastTime < COOLDOWN_MS) {
-    return true;
-  }
-  return false;
-}
-
-function recordMemorySubmission(ipKey: string, emailKey: string) {
-  const now = Date.now();
-  recentSubmissions.set(ipKey, now);
-  recentSubmissions.set(emailKey, now);
-}
-
-// Layer 2: Rate limit persistent via Supabase RPC (bekerja lintas serverless instance)
-async function isDbRateLimited(email: string): Promise<boolean> {
+// Rate limit persistent di Supabase (tanpa mengandalkan memori server lokal yang ter-reset antar instance Vercel).
+// Batas: 1 pesan per 60 detik per IP / email, atau maksimal 5 pesan total per 60 detik.
+async function isSupabaseRateLimited(email: string, ip: string): Promise<boolean> {
   try {
     const supabase = await createSupabaseServerClient();
+
+    // Coba panggil RPC dengan parameter IP & email (versi baru)
+    const { data: v2Data, error: v2Error } = await supabase.rpc('check_contact_rate_limit', {
+      p_email: email,
+      p_ip: ip,
+    });
+
+    if (!v2Error && typeof v2Data === 'boolean') {
+      return v2Data;
+    }
+
+    // Fallback ke RPC recent_message_counts yang sudah ada di Supabase
     const { data, error } = await supabase.rpc('recent_message_counts', { p_email: email });
     if (error || !data || !data[0]) {
       return false;
     }
     const { email_count, total_count } = data[0];
-    // Maksimal 1 pesan per menit per email, atau 5 pesan total per menit
+    // 1 pesan per 60 detik per email, atau jika ada pengiriman baru dalam 60 detik dari IP/instans
     return email_count >= 1 || total_count >= MAX_TOTAL_PER_MINUTE;
   } catch {
     return false;
   }
 }
 
-// Escape hanya dipakai saat menyusun HTML email, bukan saat menyimpan ke database.
 function escapeHtml(str: string): string {
   return str
     .replace(/&/g, '&amp;')
@@ -86,7 +73,7 @@ export async function POST(req: Request) {
 
     const { name, email, message, token, website } = body as Record<string, unknown>;
 
-    // Honeypot: field ini tersembunyi untuk manusia. Bot biasanya mengisinya.
+    // Honeypot anti-bot
     if (typeof website === 'string' && website.length > 0) {
       return NextResponse.json({ success: true, message: 'Pesan berhasil terkirim' });
     }
@@ -112,18 +99,16 @@ export async function POST(req: Request) {
     }
 
     const ip = getClientIp(req);
-    const ipKey = `ip:${ip}`;
-    const emailKey = `email:${cleanEmail}`;
 
-    // Cek anti-spam Layer 1 (Memory) & Layer 2 (Supabase DB)
-    if (isMemoryRateLimited(ipKey) || isMemoryRateLimited(emailKey) || (await isDbRateLimited(cleanEmail))) {
+    // Rate limit persistent berbasis Supabase (1 pesan / 60 detik per IP atau email)
+    if (await isSupabaseRateLimited(cleanEmail, ip)) {
       return NextResponse.json(
-        { error: 'Harap tunggu 1 menit sebelum mengirim pesan lagi.' },
+        { error: 'Harap tunggu 60 detik sebelum mengirim pesan lagi.' },
         { status: 429 }
       );
     }
 
-    // Verifikasi Turnstile jika TURNSTILE_SECRET_KEY diatur di environment
+    // Verifikasi Cloudflare Turnstile di server (jika TURNSTILE_SECRET_KEY diatur)
     const secretKey = process.env.TURNSTILE_SECRET_KEY;
     if (secretKey) {
       if (typeof token !== 'string' || !token) {
@@ -144,20 +129,32 @@ export async function POST(req: Request) {
       }
     }
 
-    // Catat waktu pengiriman agar kiriman berikutnya dalam <60 detik langsung ditolak
-    recordMemorySubmission(ipKey, emailKey);
-
-    // 1. Simpan ke Supabase
+    // 1. Simpan ke Supabase (menyertakan sender_ip jika kolom tersedia, fallback tanpa sender_ip)
     const supabase = await createSupabaseServerClient();
-    const { error: dbError } = await supabase
+    let { error: dbError } = await supabase
       .from('portfolio_messages')
-      .insert([{ name: cleanName, email: cleanEmail, message: cleanMessage }]);
+      .insert([{ name: cleanName, email: cleanEmail, message: cleanMessage, sender_ip: ip }]);
+
+    if (dbError && dbError.message?.includes('sender_ip')) {
+      const retry = await supabase
+        .from('portfolio_messages')
+        .insert([{ name: cleanName, email: cleanEmail, message: cleanMessage }]);
+      dbError = retry.error;
+    }
+
+    // Jika RLS policy menolak karena batas 60 detik di level database
+    if (dbError && dbError.code === '42501') {
+      return NextResponse.json(
+        { error: 'Harap tunggu 60 detik sebelum mengirim pesan lagi.' },
+        { status: 429 }
+      );
+    }
 
     if (dbError) {
       console.error('Supabase insert error:', dbError.code, dbError.message);
     }
 
-    // 2. Kirim notifikasi email (default penerima ke SITE.email)
+    // 2. Kirim notifikasi email
     const receiver = process.env.CONTACT_RECEIVER_EMAIL || SITE.email;
     let emailSent = false;
     if (process.env.EMAIL_USER && process.env.EMAIL_PASS && receiver) {

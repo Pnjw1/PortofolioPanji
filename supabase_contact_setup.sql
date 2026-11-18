@@ -9,9 +9,12 @@ CREATE TABLE IF NOT EXISTS public.portfolio_messages (
     name TEXT NOT NULL,
     email TEXT NOT NULL,
     message TEXT NOT NULL,
+    sender_ip TEXT,
     status TEXT DEFAULT 'unread',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+ALTER TABLE public.portfolio_messages ADD COLUMN IF NOT EXISTS sender_ip TEXT;
 
 ALTER TABLE public.portfolio_messages ENABLE ROW LEVEL SECURITY;
 
@@ -20,8 +23,15 @@ DROP POLICY IF EXISTS "Allow admin read messages" ON public.portfolio_messages;
 DROP POLICY IF EXISTS "Allow admin update messages" ON public.portfolio_messages;
 DROP POLICY IF EXISTS "Allow admin delete messages" ON public.portfolio_messages;
 
+-- Kebijakan INSERT tervalidasi (tidak terbuka tanpa batas panjang/format)
 CREATE POLICY "Allow public insert messages"
-ON public.portfolio_messages FOR INSERT WITH CHECK (true);
+ON public.portfolio_messages FOR INSERT
+WITH CHECK (
+    char_length(trim(name)) BETWEEN 1 AND 100
+    AND char_length(trim(email)) BETWEEN 3 AND 100
+    AND position('@' in email) > 1
+    AND char_length(trim(message)) BETWEEN 1 AND 1000
+);
 
 CREATE POLICY "Allow admin read messages"
 ON public.portfolio_messages FOR SELECT TO authenticated USING (true);
@@ -32,7 +42,32 @@ ON public.portfolio_messages FOR UPDATE TO authenticated USING (true) WITH CHECK
 CREATE POLICY "Allow admin delete messages"
 ON public.portfolio_messages FOR DELETE TO authenticated USING (true);
 
--- 2. Fungsi Anti-Spam / Rate Limit Form Kontak
+-- 2. Fungsi Anti-Spam / Rate Limit Form Kontak (Persistent di Supabase: 1 pesan per 60 detik per IP / Email)
+CREATE OR REPLACE FUNCTION public.check_contact_rate_limit(p_email text, p_ip text DEFAULT NULL)
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT (
+    EXISTS (
+      SELECT 1 FROM public.portfolio_messages
+      WHERE created_at > now() - interval '60 seconds'
+        AND (
+          lower(email) = lower(p_email)
+          OR (p_ip IS NOT NULL AND p_ip <> 'unknown-ip' AND sender_ip = p_ip)
+        )
+    )
+    OR (
+      SELECT count(*) >= 5 FROM public.portfolio_messages
+      WHERE created_at > now() - interval '60 seconds'
+    )
+  );
+$$;
+
+REVOKE ALL ON FUNCTION public.check_contact_rate_limit(text, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.check_contact_rate_limit(text, text) TO anon, authenticated;
+
 CREATE OR REPLACE FUNCTION public.recent_message_counts(p_email text)
 RETURNS TABLE (email_count integer, total_count integer)
 LANGUAGE sql

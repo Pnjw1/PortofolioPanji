@@ -18,6 +18,18 @@ body {
 }
 
 /* =============================================
+   KEYBOARD FOCUS ACCESSIBILITY (WCAG AA)
+   ============================================= */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid #22d3ee;
+  outline-offset: 2px;
+}
+
+/* =============================================
    SWIPER OVERRIDES
    Dipindahkan dari dangerouslySetInnerHTML di Projects.tsx
    ============================================= */
