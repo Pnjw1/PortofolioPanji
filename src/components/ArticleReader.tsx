@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/components/Toast';
 import ViewCounter from '@/components/ViewCounter';
+import GiscusComments from '@/components/GiscusComments';
 
 interface ArticlePost {
   id: number;
@@ -572,6 +573,9 @@ export default function ArticleReader({
             <span>Bagikan Tulisan Ini</span>
           </button>
         </div>
+
+        {/* Kolom Komentar Giscus */}
+        <GiscusComments slug={post.slug} />
 
         {/* Tulisan Lainnya */}
         {otherPosts && otherPosts.length > 0 && (
