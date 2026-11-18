@@ -23,6 +23,8 @@ export interface CaseStudySections {
   hasPlaceholders: boolean;
 }
 
+const CASE_STUDY_MARKER = '<!--case_study:';
+
 export function slugifyTitle(title: string): string {
   return (title || '')
     .toLowerCase()
@@ -51,14 +53,68 @@ export function isKartaProject(project: Pick<ProjectRecord, 'title' | 'link' | '
   );
 }
 
+// Menggabungkan 4 input studi kasus dari Admin Panel ke dalam string description
+// sehingga tersimpan di Supabase tanpa perlu menambah kolom baru di database.
+export function serializeCaseStudyToDescription(input: {
+  oneLineResult: string;
+  problem: string;
+  role: string;
+  resultsText: string;
+}): string {
+  const summary = input.oneLineResult.trim();
+  const payload = {
+    oneLineResult: summary,
+    problem: input.problem.trim(),
+    role: input.role.trim(),
+    results: input.resultsText
+      .split('\n')
+      .map((line) => line.replace(/^[-•*]\s*/, '').trim())
+      .filter((line) => line.length > 0),
+  };
+  return `${summary}\n${CASE_STUDY_MARKER}${JSON.stringify(payload)}-->`;
+}
+
 export function buildCaseStudy(project: ProjectRecord): CaseStudySections {
   const techs =
     project.tech_array && project.tech_array.length > 0
       ? project.tech_array
       : ['Next.js', 'Tailwind CSS', 'Supabase'];
 
-  // Draf Studi Kasus resmi untuk Sistem Informasi Karang Taruna (kartacintamulya.org)
-  // Berdasarkan fakta situs & CV pemilik, dengan placeholder eksplisit [ISI: angka] sesuai aturan kerja.
+  const rawDesc = project.description || '';
+
+  // 1. Cek apakah sudah pernah disimpan lewat Admin Panel (memiliki metadata <!--case_study:{...}-->)
+  const markerIdx = rawDesc.indexOf(CASE_STUDY_MARKER);
+  if (markerIdx !== -1) {
+    const endIdx = rawDesc.lastIndexOf('-->');
+    if (endIdx > markerIdx) {
+      const jsonStr = rawDesc.slice(markerIdx + CASE_STUDY_MARKER.length, endIdx);
+      try {
+        const parsed = JSON.parse(jsonStr);
+        const visibleSummary = rawDesc.slice(0, markerIdx).trim();
+        const oneLine = parsed.oneLineResult || visibleSummary || project.title;
+        const resultsArr =
+          Array.isArray(parsed.results) && parsed.results.length > 0
+            ? parsed.results
+            : [oneLine];
+        return {
+          oneLineResult: oneLine,
+          problem: parsed.problem || visibleSummary || '-',
+          role: parsed.role || 'Web Developer & Desainer Visual',
+          technologies: techs,
+          results: resultsArr,
+          hasPlaceholders:
+            oneLine.includes('[ISI:') ||
+            (parsed.problem || '').includes('[ISI:') ||
+            (parsed.role || '').includes('[ISI:') ||
+            resultsArr.some((r: string) => r.includes('[ISI:')),
+        };
+      } catch {
+        // Lanjut ke fallback di bawah jika JSON rusak
+      }
+    }
+  }
+
+  // 2. Draf Studi Kasus default untuk Sistem Informasi Karang Taruna (kartacintamulya.org)
   if (isKartaProject(project)) {
     return {
       oneLineResult:
@@ -77,25 +133,22 @@ export function buildCaseStudy(project: ProjectRecord): CaseStudySections {
     };
   }
 
-  // Untuk proyek lain: ekstrak kalimat pertama sebagai ringkasan hasil, dan tampilkan placeholder jika detail studi kasus belum diisi di Supabase
-  const rawDesc = (project.description || '').trim();
-  const firstSentenceMatch = rawDesc.match(/^[^.!?]+[.!?]/);
+  // 3. Fallback untuk proyek lain yang belum diedit studi kasusnya di Admin Panel
+  const cleanDesc = rawDesc.trim();
+  const firstSentenceMatch = cleanDesc.match(/^[^.!?]+[.!?]/);
   const oneLineResult = firstSentenceMatch
     ? firstSentenceMatch[0].trim()
-    : rawDesc || 'Studi kasus pengembangan dan implementasi proyek.';
+    : cleanDesc || 'Studi kasus pengembangan dan implementasi proyek.';
 
   return {
     oneLineResult,
     problem:
-      rawDesc ||
+      cleanDesc ||
       '[ISI: deskripsi latar belakang masalah yang diselesaikan oleh proyek ini]',
     role:
-      'Web Developer & Desainer Visual — merancang antarmuka, mengimplementasikan fitur utama, serta melakukan pengujian dan deployment. [ISI: detail peran spesifik pada proyek ini]',
+      'Web Developer & Desainer Visual — merancang antarmuka, mengimplementasikan fitur utama, serta melakukan pengujian dan deployment.',
     technologies: techs,
-    results: [
-      oneLineResult,
-      'Metrik hasil: [ISI: angka atau hasil terukur dari proyek ini].',
-    ],
-    hasPlaceholders: true,
+    results: [oneLineResult],
+    hasPlaceholders: cleanDesc.includes('[ISI:'),
   };
 }
