@@ -1,8 +1,9 @@
 import { MetadataRoute } from 'next';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { getProjectSlug } from '@/lib/project-case-studies';
+import { SITE } from '@/lib/site';
 
-const SITE_URL = 'https://panjiwiguna.vercel.app';
+const SITE_URL = SITE.url;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const supabase = await createSupabaseServerClient();

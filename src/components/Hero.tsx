@@ -180,7 +180,7 @@ function PendulumNameTag() {
                 </div>
                 <div className="text-center space-y-1">
                   <p className="text-zinc-300 text-xs">Pindai untuk membuka portofolio</p>
-                  <p className="text-cyan-400 text-xs font-mono">panjiwiguna.vercel.app</p>
+                  <p className="text-cyan-400 text-xs font-mono">panjiwiguna.site</p>
                 </div>
               </div>
             </button>

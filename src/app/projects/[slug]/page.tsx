@@ -5,6 +5,7 @@ import { ArrowLeft, ExternalLink, AlertCircle, UserCheck, Cpu, CheckCircle2 } fr
 import { notFound } from 'next/navigation';
 import { buildCaseStudy, getProjectSlug, type ProjectRecord } from '@/lib/project-case-studies';
 import ProjectGallery from '@/components/ProjectGallery';
+import { SITE } from '@/lib/site';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -56,12 +57,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: `Studi Kasus: ${project.title} — Panji Wiguna`,
     description: caseStudy.oneLineResult,
     alternates: {
-      canonical: `https://panjiwiguna.vercel.app/projects/${encodeURIComponent(canonicalSlug)}`,
+      canonical: `${SITE.url}/projects/${encodeURIComponent(canonicalSlug)}`,
     },
     openGraph: {
       title: `Studi Kasus: ${project.title} — Panji Wiguna`,
       description: caseStudy.oneLineResult,
-      url: `https://panjiwiguna.vercel.app/projects/${encodeURIComponent(canonicalSlug)}`,
+      url: `${SITE.url}/projects/${encodeURIComponent(canonicalSlug)}`,
       type: 'article',
       images: project.image_url ? [{ url: project.image_url, width: 1200, height: 630 }] : [],
     },

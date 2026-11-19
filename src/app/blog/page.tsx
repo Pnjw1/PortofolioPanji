@@ -3,17 +3,18 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, Calendar, ArrowRight, ChevronLeft, ChevronRight, Eye, Headphones, Clock } from 'lucide-react';
+import { SITE } from '@/lib/site';
 
 export const metadata: Metadata = {
   title: 'Jurnal & Catatan — Panji Wiguna',
   description: 'Esai, catatan proyek, dan pembahasan seputar pengembangan web, desain komunikasi visual, serta teknologi.',
   alternates: {
-    canonical: 'https://panjiwiguna.vercel.app/blog',
+    canonical: `${SITE.url}/blog`,
   },
   openGraph: {
     title: 'Jurnal & Catatan — Panji Wiguna',
     description: 'Esai, catatan proyek, dan pembahasan seputar pengembangan web, desain komunikasi visual, serta teknologi.',
-    url: 'https://panjiwiguna.vercel.app/blog',
+    url: `${SITE.url}/blog`,
     type: 'website',
     images: [
       {

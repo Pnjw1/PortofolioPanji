@@ -2,6 +2,7 @@ import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import ArticleReader from '@/components/ArticleReader';
+import { SITE } from '@/lib/site';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -24,13 +25,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: `${post.title} — Jurnal Panji Wiguna`,
     description: post.excerpt || post.title,
     alternates: {
-      canonical: `https://panjiwiguna.vercel.app/blog/${slug}`,
+      canonical: `${SITE.url}/blog/${slug}`,
     },
     openGraph: {
       title: post.title,
       description: post.excerpt || post.title,
       type: 'article',
-      url: `https://panjiwiguna.vercel.app/blog/${slug}`,
+      url: `${SITE.url}/blog/${slug}`,
       images: post.cover_url ? [{ url: post.cover_url, width: 1200, height: 630 }] : [],
     },
     twitter: {

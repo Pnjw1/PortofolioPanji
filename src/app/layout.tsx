@@ -17,7 +17,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://panjiwiguna.vercel.app"),
+  metadataBase: new URL(SITE.url),
   title: "Panji Wiguna — Web Developer & Desainer Komunikasi Visual (DKV)",
   description:
     "Membangun aplikasi web modern yang cepat sekaligus merancang identitas visual dan konten digital yang rapi, menggabungkan logika pemrograman (TJKT) dengan kepekaan desain (DKV).",
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     google: "aInrjvQjT0_0CSueDlePUm77XhHwx3qiwyMGs6cK9gM",
   },
   alternates: {
-    canonical: "https://panjiwiguna.vercel.app",
+    canonical: SITE.url,
   },
   icons: {
     icon: "/images/favicon.svg",
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     title: "Panji Wiguna — Web Developer & Desainer Komunikasi Visual (DKV)",
     description:
       "Membangun aplikasi web modern yang cepat sekaligus merancang identitas visual dan konten digital yang rapi, menggabungkan logika pemrograman (TJKT) dengan kepekaan desain (DKV).",
-    url: "https://panjiwiguna.vercel.app",
+    url: SITE.url,
     siteName: "Panji Wiguna Portfolio",
     type: "website",
     locale: "id_ID",
@@ -76,8 +76,8 @@ export default function RootLayout({
               "@context": "https://schema.org",
               "@type": "Person",
               name: "Panji Wiguna",
-              url: "https://panjiwiguna.vercel.app",
-              image: "https://panjiwiguna.vercel.app/images/panji-wiguna.png",
+              url: SITE.url,
+              image: `${SITE.url}/images/panji-wiguna.png`,
               sameAs: [
                 SITE.github,
                 SITE.linkedin,

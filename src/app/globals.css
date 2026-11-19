@@ -30,24 +30,6 @@ select:focus-visible {
 }
 
 /* =============================================
-   SWIPER OVERRIDES
-   Dipindahkan dari dangerouslySetInnerHTML di Projects.tsx
-   ============================================= */
-.projects-swiper .swiper-button-next,
-.projects-swiper .swiper-button-prev {
-  color: #22d3ee !important;
-  transform: scale(0.7);
-}
-
-.projects-swiper .swiper-pagination-bullet-active {
-  background-color: #22d3ee !important;
-}
-
-.projects-swiper .swiper-slide {
-  height: auto;
-}
-
-/* =============================================
    REDUCED MOTION SUPPORT
    Menghormati preferensi aksesibilitas pengguna
    ============================================= */
@@ -61,19 +43,12 @@ select:focus-visible {
     scroll-behavior: auto !important;
   }
 
-  /* Matikan Framer Motion animate-ping */
   .animate-ping {
     animation: none !important;
   }
 
-  /* Matikan animate-pulse skeleton */
   .animate-pulse {
     animation: none !important;
     opacity: 0.5;
-  }
-
-  /* Marquee dihentikan */
-  .rfm-marquee-container .rfm-marquee {
-    animation-play-state: paused !important;
   }
 }
