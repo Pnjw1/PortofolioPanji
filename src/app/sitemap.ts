@@ -27,7 +27,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .not('slug', 'is', null);
 
   const blogEntries: MetadataRoute.Sitemap = (posts || []).map((post) => ({
-    url: `${SITE_URL}/blog/${post.slug}`,
+    url: `${SITE_URL}/blog/${encodeURIComponent(post.slug)}`,
     lastModified: new Date(post.updated_at || new Date()),
     changeFrequency: 'weekly',
     priority: 0.8,
@@ -41,7 +41,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   const certEntries: MetadataRoute.Sitemap = (certGroups || []).map((cert) => ({
-    url: `${SITE_URL}/certificates/${cert.slug}`,
+    url: `${SITE_URL}/certificates/${encodeURIComponent(cert.slug)}`,
     lastModified: new Date(cert.created_at || new Date()),
     changeFrequency: 'monthly',
     priority: 0.7,
