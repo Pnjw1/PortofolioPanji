@@ -22,6 +22,9 @@ export const metadata: Metadata = {
   description:
     "Membangun aplikasi web modern yang cepat sekaligus merancang identitas visual dan konten digital yang rapi, menggabungkan logika pemrograman (TJKT) dengan kepekaan desain (DKV).",
   authors: [{ name: "Panji Wiguna" }],
+  verification: {
+    google: "aInrjvQjT0_0CSueDlePUm77XhHwx3qiwyMGs6cK9gM",
+  },
   alternates: {
     canonical: "https://panjiwiguna.vercel.app",
   },
