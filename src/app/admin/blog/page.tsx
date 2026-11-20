@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
-import { FileText, Trash2, Plus, Pencil, X, Check, Eye, EyeOff, ExternalLink, Headphones } from 'lucide-react';
+import { FileText, Trash2, Plus, Pencil, X, Check, Eye, EyeOff, ExternalLink, Headphones, ImagePlus, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/Toast';
 import { extractMusicFromContent } from '@/components/ArticleReader';
 
@@ -33,6 +33,79 @@ export default function BlogManager() {
   const [tags, setTags] = useState('');
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [isPublished, setIsPublished] = useState(false);
+  const [uploadingInline, setUploadingInline] = useState(false);
+  const [uploadingEditInline, setUploadingEditInline] = useState(false);
+
+  const addTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const editTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const addInlineInputRef = useRef<HTMLInputElement>(null);
+  const editInlineInputRef = useRef<HTMLInputElement>(null);
+
+  async function uploadInlineImage(file: File): Promise<string | null> {
+    const fileExt = file.name.split('.').pop() || 'png';
+    const fileName = `blog_inline_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.${fileExt}`;
+    const { error: uploadError } = await supabase.storage
+      .from('portfolio_images')
+      .upload(fileName, file);
+    if (uploadError) {
+      toast('Upload foto gagal: ' + uploadError.message, 'error');
+      return null;
+    }
+    const { data: { publicUrl } } = supabase.storage
+      .from('portfolio_images')
+      .getPublicUrl(fileName);
+    return publicUrl;
+  }
+
+  function insertMarkdownAtCursor(
+    currentText: string,
+    textarea: HTMLTextAreaElement | null,
+    snippet: string
+  ): string {
+    if (!textarea) {
+      return currentText ? `${currentText}\n\n${snippet}\n` : `${snippet}\n`;
+    }
+    const start = textarea.selectionStart ?? currentText.length;
+    const end = textarea.selectionEnd ?? currentText.length;
+    const before = currentText.slice(0, start);
+    const after = currentText.slice(end);
+    const prefix = before && !before.endsWith('\n') ? '\n\n' : before ? '\n' : '';
+    const suffix = after && !after.startsWith('\n') ? '\n\n' : '\n';
+    return `${before}${prefix}${snippet}${suffix}${after}`;
+  }
+
+  async function handleInsertInlineAdd(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingInline(true);
+    const url = await uploadInlineImage(file);
+    if (url) {
+      const defaultCaption = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]+/g, ' ');
+      const snippet = `![${defaultCaption}](${url})`;
+      setContent((prev) => insertMarkdownAtCursor(prev, addTextareaRef.current, snippet));
+      toast('Foto berhasil disisipkan ke konten!', 'success');
+    }
+    e.target.value = '';
+    setUploadingInline(false);
+  }
+
+  async function handleInsertInlineEdit(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingEditInline(true);
+    const url = await uploadInlineImage(file);
+    if (url) {
+      const defaultCaption = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]+/g, ' ');
+      const snippet = `![${defaultCaption}](${url})`;
+      setEditData((prev: any) => ({
+        ...prev,
+        content: insertMarkdownAtCursor(prev.content || '', editTextareaRef.current, snippet),
+      }));
+      toast('Foto berhasil disisipkan ke konten!', 'success');
+    }
+    e.target.value = '';
+    setUploadingEditInline(false);
+  }
 
   useEffect(() => { fetchData(); }, []);
 
@@ -209,12 +282,38 @@ export default function BlogManager() {
           </div>
 
           <div>
-            <label className="block text-xs font-mono text-zinc-500 mb-1">
-              Konten (Mendukung: # Heading, **bold**, *italic*, `code`, ```code block```, - list, &gt; kutipan, ![alt](url))
-            </label>
-            <textarea required value={content} onChange={e => setContent(e.target.value)} rows={10}
-              placeholder={"Tulis isi artikel di sini..."}
-              className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-cyan-500 font-mono leading-relaxed" />
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+              <label className="block text-xs font-mono text-zinc-400">
+                Konten (Mendukung: # Heading, **bold**, *italic*, `code`, - list, &gt; kutipan, ![keterangan](url))
+              </label>
+              <div>
+                <input
+                  ref={addInlineInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleInsertInlineAdd}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  disabled={uploadingInline}
+                  onClick={() => addInlineInputRef.current?.click()}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-xs font-medium text-cyan-300 transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  {uploadingInline ? <Loader2 size={13} className="animate-spin" /> : <ImagePlus size={13} />}
+                  {uploadingInline ? 'Mengunggah...' : 'Sisipkan Foto'}
+                </button>
+              </div>
+            </div>
+            <textarea
+              ref={addTextareaRef}
+              required
+              value={content}
+              onChange={e => setContent(e.target.value)}
+              rows={10}
+              placeholder={"Tulis isi artikel di sini... Letakkan kursor di baris yang diinginkan lalu klik 'Sisipkan Foto' untuk menambahkan gambar di tengah artikel."}
+              className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-cyan-500 font-mono leading-relaxed"
+            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
@@ -280,8 +379,36 @@ export default function BlogManager() {
                           placeholder="Judul Lagu — Artis (Opsional)" className="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white text-xs outline-none" />
                       </div>
 
-                      <textarea value={editData.content} onChange={e => setEditData({...editData, content: e.target.value})}
-                        rows={8} className="w-full bg-zinc-900 border border-cyan-500/50 rounded-lg px-3 py-2 text-white text-sm outline-none font-mono" />
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs font-mono text-zinc-400">Konten Artikel</span>
+                          <div>
+                            <input
+                              ref={editInlineInputRef}
+                              type="file"
+                              accept="image/*"
+                              onChange={handleInsertInlineEdit}
+                              className="hidden"
+                            />
+                            <button
+                              type="button"
+                              disabled={uploadingEditInline}
+                              onClick={() => editInlineInputRef.current?.click()}
+                              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-xs font-medium text-cyan-300 transition-colors cursor-pointer disabled:opacity-50"
+                            >
+                              {uploadingEditInline ? <Loader2 size={13} className="animate-spin" /> : <ImagePlus size={13} />}
+                              {uploadingEditInline ? 'Mengunggah...' : 'Sisipkan Foto'}
+                            </button>
+                          </div>
+                        </div>
+                        <textarea
+                          ref={editTextareaRef}
+                          value={editData.content}
+                          onChange={e => setEditData({...editData, content: e.target.value})}
+                          rows={8}
+                          className="w-full bg-zinc-900 border border-cyan-500/50 rounded-lg px-3 py-2 text-white text-sm outline-none font-mono"
+                        />
+                      </div>
                       <input value={editData.tags} onChange={e => setEditData({...editData, tags: e.target.value})}
                         placeholder="Tags (pisah koma)" className="w-full bg-zinc-900 border border-cyan-500/50 rounded-lg px-3 py-2 text-white text-sm outline-none" />
                       <div className="flex gap-2">
