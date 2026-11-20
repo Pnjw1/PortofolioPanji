@@ -1,6 +1,6 @@
 # Panji Wiguna — Portfolio & Personal Website
 
-Website portofolio dan blog pribadi **Panji Wiguna** (Web Developer & Desainer Komunikasi Visual), dibangun menggunakan Next.js App Router, TypeScript, Tailwind CSS, dan Supabase.
+Website portofolio dan blog pribadi Saya (**Panji Wiguna**) (Web Developer & Desainer Komunikasi Visual), dibangun menggunakan Next.js App Router, TypeScript, Tailwind CSS, dan Supabase.
 
 **Live Website:** [https://www.panjiwiguna.site](https://www.panjiwiguna.site)
 
