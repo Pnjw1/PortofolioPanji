@@ -10,6 +10,7 @@ import Contact from '@/components/Contact';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { createSupabasePublicClient } from '@/lib/supabase-public';
+import { getProjectSlug } from '@/lib/project-case-studies';
 
 export const revalidate = 60;
 
@@ -18,6 +19,7 @@ export default async function Home() {
 
   const [
     projectsRes,
+    projectImagesRes,
     experiencesRes,
     techRes,
     certsRes,
@@ -25,6 +27,7 @@ export default async function Home() {
     testimonialsRes,
   ] = await Promise.all([
     supabase.from('portfolio_projects').select('*').order('created_at', { ascending: false }),
+    supabase.from('project_images').select('project_slug, image_url').order('sort_order', { ascending: true }),
     supabase.from('portfolio_experiences').select('*').order('sort_order', { ascending: true }),
     supabase.from('portfolio_tech').select('*').order('created_at', { ascending: false }),
     supabase.from('portfolio_certificates').select('*').is('parent_slug', null).order('created_at', { ascending: false }),
@@ -32,7 +35,20 @@ export default async function Home() {
     supabase.from('portfolio_testimonials').select('*').order('created_at', { ascending: false }),
   ]);
 
-  const projects = projectsRes.data || [];
+  // Jika proyek belum punya thumbnail utama (image_url), otomatis pakai gambar pertama dari galerinya
+  const firstGalleryImageBySlug: Record<string, string> = {};
+  (projectImagesRes.data || []).forEach((img) => {
+    if (img.project_slug && img.image_url && !firstGalleryImageBySlug[img.project_slug]) {
+      firstGalleryImageBySlug[img.project_slug] = img.image_url;
+    }
+  });
+
+  const projects = (projectsRes.data || []).map((project) => {
+    if (project.image_url) return project;
+    const slug = getProjectSlug(project);
+    const fallbackImg = firstGalleryImageBySlug[slug];
+    return fallbackImg ? { ...project, image_url: fallbackImg } : project;
+  });
   const experiences = experiencesRes.data || [];
   const technologies = techRes.data || [];
   const certificates = (certsRes.data || []).filter(

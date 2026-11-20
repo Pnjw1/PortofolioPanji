@@ -156,11 +156,33 @@ export default function ProjectsManager() {
       tech_array: item.tech_array?.join(', ') || '',
       link: item.link || '',
       alt_text: item.alt_text || '',
+      image_url: item.image_url || '',
+      newImageFile: null as File | null,
     });
   }
 
   async function saveEdit(id: number) {
     setSaving(true);
+    let finalImageUrl = editData.image_url || null;
+
+    if (editData.newImageFile) {
+      const file = editData.newImageFile as File;
+      const fileExt = file.name.split('.').pop() || 'png';
+      const fileName = `project_${Date.now()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from('portfolio_images')
+        .upload(fileName, file);
+      if (uploadError) {
+        toast('Upload thumbnail gagal: ' + uploadError.message, 'error');
+        setSaving(false);
+        return;
+      }
+      const { data: { publicUrl } } = supabase.storage
+        .from('portfolio_images')
+        .getPublicUrl(fileName);
+      finalImageUrl = publicUrl;
+    }
+
     const techArray = editData.tech_array.split(',').map((t: string) => t.trim()).filter((t: string) => t !== '');
     const serializedDescription = serializeCaseStudyToDescription({
       oneLineResult: editData.oneLineResult || editData.title,
@@ -176,6 +198,7 @@ export default function ProjectsManager() {
       tech_array: techArray,
       link: editData.link || null,
       alt_text: editData.alt_text || null,
+      image_url: finalImageUrl,
     }).eq('id', id);
 
     setSaving(false);
@@ -457,6 +480,33 @@ export default function ProjectsManager() {
                           <label className="block text-xs font-mono text-zinc-400 mb-1">Alt Text Gambar</label>
                           <input value={editData.alt_text} onChange={e => setEditData({...editData, alt_text: e.target.value})}
                             className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-cyan-500" />
+                        </div>
+                      </div>
+
+                      <div className="p-3 rounded-lg bg-zinc-950/60 border border-zinc-800 space-y-2">
+                        <label className="block text-xs font-mono text-cyan-400">
+                          Thumbnail Preview Kartu (Tampil di Beranda)
+                        </label>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                          {editData.image_url && (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img
+                              src={editData.image_url}
+                              alt="Thumbnail saat ini"
+                              className="w-28 aspect-video object-cover rounded-md border border-zinc-700 shrink-0"
+                            />
+                          )}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) =>
+                              setEditData({
+                                ...editData,
+                                newImageFile: e.target.files?.[0] || null,
+                              })
+                            }
+                            className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5 text-white text-xs sm:text-sm file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-xs file:bg-cyan-500 file:text-black file:font-bold"
+                          />
                         </div>
                       </div>
 
