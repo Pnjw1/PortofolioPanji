@@ -33,9 +33,15 @@ export const metadata: Metadata = {
     canonical: SITE.url,
   },
   icons: {
-    icon: "/images/favicon.svg",
-    shortcut: "/images/favicon.svg",
-    apple: "/images/favicon.svg",
+    icon: [
+      { url: "/favicon.ico", sizes: "48x48" },
+      { url: "/favicon-48x48.png", type: "image/png", sizes: "48x48" },
+      { url: "/icon-192x192.png", type: "image/png", sizes: "192x192" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
   },
   openGraph: {
     title: "Panji Wiguna — Web Developer & Desainer Komunikasi Visual (DKV)",
