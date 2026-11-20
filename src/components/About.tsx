@@ -43,11 +43,11 @@ export default function About() {
           <p>
             Kombinasi latar belakang teknis jaringan (TJKT) dan desain komunikasi visual (DKV) memungkinkan saya
             menangani proyek secara menyeluruh—mulai dari sistem informasi web seperti{' '}
-            <a href="https://kartacintamulya.org" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">kartacintamulya.org</a>{' '}
+            <a href="https://kartacintamulya.org" target="_blank" rel="noopener noreferrer" className="text-cyan-400 underline decoration-cyan-400/60 underline-offset-4 hover:decoration-cyan-300">kartacintamulya.org</a>{' '}
             hingga perencanaan konten dan identitas visual pada akun informasi masyarakat{' '}
-            <a href="https://instagram.com/info.cintamulya" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">@info.cintamulya</a>,{' '}
-            <a href="https://instagram.com/karta.cintamulya" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">@karta.cintamulya</a>, dan{' '}
-            <a href="https://instagram.com/petacipajaran" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">@petacipajaran</a>.
+            <a href="https://instagram.com/info.cintamulya" target="_blank" rel="noopener noreferrer" className="text-cyan-400 underline decoration-cyan-400/60 underline-offset-4 hover:decoration-cyan-300">@info.cintamulya</a>,{' '}
+            <a href="https://instagram.com/karta.cintamulya" target="_blank" rel="noopener noreferrer" className="text-cyan-400 underline decoration-cyan-400/60 underline-offset-4 hover:decoration-cyan-300">@karta.cintamulya</a>, dan{' '}
+            <a href="https://instagram.com/petacipajaran" target="_blank" rel="noopener noreferrer" className="text-cyan-400 underline decoration-cyan-400/60 underline-offset-4 hover:decoration-cyan-300">@petacipajaran</a>.
           </p>
         </div>
 

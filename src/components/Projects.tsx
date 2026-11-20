@@ -53,6 +53,7 @@ export default function Projects({ initialProjects = [] }: { initialProjects?: P
                     {/* Thumbnail 16:9 */}
                     <Link
                       href={`/projects/${encodeURIComponent(slug)}`}
+                      aria-label={`Lihat studi kasus ${project.title}`}
                       className="block relative w-full aspect-video bg-zinc-950 border-b border-zinc-800 overflow-hidden"
                     >
                       {project.image_url ? (
