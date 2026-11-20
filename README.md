@@ -1,36 +1,123 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Panji Wiguna — Portfolio & Personal Website
 
-## Getting Started
+Website portofolio dan blog pribadi **Panji Wiguna** (Web Developer & Desainer Komunikasi Visual), dibangun menggunakan Next.js App Router, TypeScript, Tailwind CSS, dan Supabase.
 
-First, run the development server:
+**Live Website:** [https://www.panjiwiguna.site](https://www.panjiwiguna.site)
+
+![Panji Wiguna Portfolio Preview](public/images/og-banner.png)
+
+---
+
+## Fitur Utama
+
+- **Server-Side Rendering & SEO**: Beranda, halaman studi kasus proyek, dan artikel blog dirender di sisi server (`revalidate`) lengkap dengan metadata OpenGraph, JSON-LD `Person`, `robots.txt`, dan `sitemap.xml` dinamis.
+- **Studi Kasus Proyek Terstruktur**: Setiap proyek memiliki halaman detail sendiri (`/projects/[slug]`) dengan struktur *Masalah*, *Peran Saya*, *Teknologi*, dan *Hasil*, beserta galeri gambar.
+- **Blog Editorial & Komentar**: Halaman baca artikel (`/blog/[slug]`) dilengkapi *reading progress bar*, pengaturan jenis huruf (Sans/Serif) dan ukuran teks, dukungan embed audio/Spotify/YouTube, serta kolom komentar berbasis [Giscus](https://giscus.app/) (GitHub Discussions).
+- **Formulir Kontak Terproteksi**: Dilengkapi validasi server, *honeypot*, Cloudflare Turnstile, notifikasi email via Nodemailer, serta *persistent rate limiting* di Supabase.
+- **Admin CMS & Analytics Dashboard (`/admin`)**:
+  - Dilindungi autentikasi Supabase melalui Next.js `proxy.ts` dan *rate limit* login.
+  - Manajemen penuh untuk Proyek (termasuk editor Studi Kasus), Artikel Blog, Tech Stack, Pengalaman, Sertifikat, Testimoni, dan Kotak Masuk Pesan.
+  - Dashboard analytics bawaan (*first-party*) yang menampilkan grafik kunjungan harian, pengunjung unik (hash harian tanpa menyimpan IP mentah), halaman terpopuler, sumber trafik, dan distribusi perangkat, serta terintegrasi dengan Google Analytics 4.
+- **Keamanan & Header HTTP**: Dilengkapi `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `Strict-Transport-Security`, `Content-Security-Policy-Report-Only`, dan `/.well-known/security.txt`.
+
+---
+
+## Tech Stack
+
+| Kategori | Teknologi |
+| --- | --- |
+| Framework | Next.js 16 (App Router), React 19, TypeScript |
+| Styling & UI | Tailwind CSS v4, Framer Motion, Lucide Icons |
+| Database & Auth | Supabase (PostgreSQL, Auth, Storage, RLS) |
+| Keamanan & Form | Cloudflare Turnstile, Nodemailer |
+| Komentar & Analytics | Giscus, Google Tag / GA4, Vercel Analytics, First-Party Supabase Analytics |
+| Deployment | Vercel |
+
+---
+
+## Struktur Direktori
+
+```text
+├── public/
+│   ├── .well-known/security.txt
+│   ├── images/                     # Aset visual & OG banner
+│   ├── CV_Panji_Wiguna.pdf         # Dokumen CV siap unduh
+│   └── favicon.ico                 # Favicon standar (ICO & PNG)
+├── src/
+│   ├── app/
+│   │   ├── actions/                # Server Actions (autentikasi admin)
+│   │   ├── admin/                  # CMS & Analytics Dashboard (terproteksi)
+│   │   ├── api/
+│   │   │   ├── analytics/track/    # Endpoint pelacakan kunjungan halaman
+│   │   │   └── contact/            # Endpoint formulir kontak & email
+│   │   ├── blog/                   # Daftar & halaman baca artikel
+│   │   ├── certificates/           # Detail grup sertifikat
+│   │   ├── projects/               # Halaman studi kasus proyek
+│   │   ├── layout.tsx              # Root layout, metadata, JSON-LD, GA4
+│   │   ├── page.tsx                # Beranda (Server Component)
+│   │   ├── robots.ts               # Konfigurasi robots.txt
+│   │   └── sitemap.ts              # Generator sitemap.xml dinamis
+│   ├── components/                 # Komponen UI publik & dashboard admin
+│   ├── lib/                        # Konfigurasi situs, Supabase client, parser
+│   └── proxy.ts                    # Proteksi sesi rute /admin
+└── next.config.ts                  # Konfigurasi image remote & security headers
+```
+
+---
+
+## Menjalankan Secara Lokal
+
+### 1. Clone & Instal Dependensi
+
+```bash
+git clone https://github.com/Pnjw1/PortofolioPanji.git
+cd PortofolioPanji
+npm install
+```
+
+### 2. Konfigurasi Environment Variables
+
+Buat file `.env.local` di root proyek dan isi variabel berikut:
+
+```env
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# Email SMTP (Nodemailer untuk formulir kontak)
+EMAIL_USER=your_email_address
+EMAIL_PASS=your_email_app_password
+
+# Cloudflare Turnstile
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=your_turnstile_site_key
+TURNSTILE_SECRET_KEY=your_turnstile_secret_key
+
+# Opsional: Google Tag & GA4
+NEXT_PUBLIC_GTM_ID=GTM-XXXXXXXX
+NEXT_PUBLIC_GA_ID=G-XXXXXXXXXX
+```
+
+### 3. Jalankan Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Buka [http://localhost:3000](http://localhost:3000) di browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 4. Build Produksi
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm run start
+```
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## Kontak
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Website**: [https://www.panjiwiguna.site](https://www.panjiwiguna.site)
+- **GitHub**: [https://github.com/Pnjw1](https://github.com/Pnjw1)
+- **LinkedIn**: [https://www.linkedin.com/in/panji-wiguna-dev](https://www.linkedin.com/in/panji-wiguna-dev)
+- **Instagram**: [https://www.instagram.com/panjiwiiguna](https://www.instagram.com/panjiwiiguna)
+- **Email**: panjiwiguna98@gmail.com
