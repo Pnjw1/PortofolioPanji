@@ -3,6 +3,7 @@ import Script from "next/script";
 import { Geist, JetBrains_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import ScrollToTop from "@/components/ScrollToTop";
+import PageViewTracker from "@/components/PageViewTracker";
 import { ToastProvider } from "@/components/Toast";
 import "./globals.css";
 import { SITE } from "@/lib/site";
@@ -118,6 +119,7 @@ export default function RootLayout({
           {children}
         </ToastProvider>
         <ScrollToTop />
+        <PageViewTracker />
         <Analytics />
         <Script
           src={`https://www.googletagmanager.com/gtm.js?id=${GTM_ID}`}
