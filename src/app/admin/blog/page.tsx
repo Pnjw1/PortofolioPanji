@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
-import { FileText, Trash2, Plus, Pencil, X, Check, Eye, EyeOff, ExternalLink, Headphones, ImagePlus, Loader2 } from 'lucide-react';
+import { FileText, Trash2, Plus, Pencil, X, Check, Eye, EyeOff, ExternalLink, Headphones, ImagePlus, Loader2, Upload } from 'lucide-react';
 import { useToast } from '@/components/Toast';
 import { extractMusicFromContent } from '@/components/ArticleReader';
 
@@ -35,11 +35,69 @@ export default function BlogManager() {
   const [isPublished, setIsPublished] = useState(false);
   const [uploadingInline, setUploadingInline] = useState(false);
   const [uploadingEditInline, setUploadingEditInline] = useState(false);
+  const [uploadingAudio, setUploadingAudio] = useState(false);
+  const [uploadingEditAudio, setUploadingEditAudio] = useState(false);
 
   const addTextareaRef = useRef<HTMLTextAreaElement>(null);
   const editTextareaRef = useRef<HTMLTextAreaElement>(null);
   const addInlineInputRef = useRef<HTMLInputElement>(null);
   const editInlineInputRef = useRef<HTMLInputElement>(null);
+  const addAudioInputRef = useRef<HTMLInputElement>(null);
+  const editAudioInputRef = useRef<HTMLInputElement>(null);
+
+  async function uploadAudioFile(file: File): Promise<string | null> {
+    if (file.size > 15 * 1024 * 1024) {
+      toast('Ukuran file audio maksimal 15 MB.', 'error');
+      return null;
+    }
+    const fileExt = file.name.split('.').pop() || 'mp3';
+    const fileName = `blog_audio_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.${fileExt}`;
+    const { error: uploadError } = await supabase.storage
+      .from('portfolio_images')
+      .upload(fileName, file, { contentType: file.type || 'audio/mpeg' });
+    if (uploadError) {
+      toast('Upload audio gagal: ' + uploadError.message, 'error');
+      return null;
+    }
+    const { data: { publicUrl } } = supabase.storage
+      .from('portfolio_images')
+      .getPublicUrl(fileName);
+    return publicUrl;
+  }
+
+  async function handleUploadAudioAdd(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingAudio(true);
+    const url = await uploadAudioFile(file);
+    if (url) {
+      setMusicUrl(url);
+      if (!musicTitle.trim()) {
+        setMusicTitle(file.name.replace(/\.[^/.]+$/, '').replace(/[-_]+/g, ' '));
+      }
+      toast('File audio berhasil diunggah!', 'success');
+    }
+    e.target.value = '';
+    setUploadingAudio(false);
+  }
+
+  async function handleUploadAudioEdit(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingEditAudio(true);
+    const url = await uploadAudioFile(file);
+    if (url) {
+      const fallbackTitle = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]+/g, ' ');
+      setEditData((prev: any) => ({
+        ...prev,
+        musicUrl: url,
+        musicTitle: prev.musicTitle?.trim() ? prev.musicTitle : fallbackTitle,
+      }));
+      toast('File audio berhasil diunggah!', 'success');
+    }
+    e.target.value = '';
+    setUploadingEditAudio(false);
+  }
 
   async function uploadInlineImage(file: File): Promise<string | null> {
     const fileExt = file.name.split('.').pop() || 'png';
@@ -254,10 +312,30 @@ export default function BlogManager() {
           </div>
 
           {/* Musik / Lagu Teman Baca */}
-          <div className="p-3.5 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-2">
-            <div className="flex items-center gap-2 text-xs font-mono text-cyan-400">
-              <Headphones size={14} />
-              <span>Lagu Teman Baca (Opsional — Spotify / YouTube / MP3)</span>
+          <div className="p-3.5 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-2.5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-xs font-mono text-cyan-400">
+                <Headphones size={14} />
+                <span>Lagu Teman Baca (Opsional — Spotify / YouTube / Upload MP3)</span>
+              </div>
+              <div>
+                <input
+                  ref={addAudioInputRef}
+                  type="file"
+                  accept="audio/*,.mp3,.m4a,.wav,.ogg"
+                  onChange={handleUploadAudioAdd}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  disabled={uploadingAudio}
+                  onClick={() => addAudioInputRef.current?.click()}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-xs font-medium text-emerald-300 transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  {uploadingAudio ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
+                  {uploadingAudio ? 'Mengunggah...' : 'Upload MP3'}
+                </button>
+              </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
@@ -372,11 +450,36 @@ export default function BlogManager() {
                       <input value={editData.excerpt} onChange={e => setEditData({...editData, excerpt: e.target.value})}
                         placeholder="Subjudul / Ringkasan" className="w-full bg-zinc-900 border border-cyan-500/50 rounded-lg px-3 py-2 text-white text-sm outline-none" />
                       
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-lg bg-zinc-900/60 border border-zinc-800">
-                        <input value={editData.musicUrl || ''} onChange={e => setEditData({...editData, musicUrl: e.target.value})}
-                          placeholder="Link Lagu Spotify / YouTube / MP3 (Opsional)" className="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white text-xs font-mono outline-none" />
-                        <input value={editData.musicTitle || ''} onChange={e => setEditData({...editData, musicTitle: e.target.value})}
-                          placeholder="Judul Lagu — Artis (Opsional)" className="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white text-xs outline-none" />
+                      <div className="p-3 rounded-lg bg-zinc-900/60 border border-zinc-800 space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs font-mono text-cyan-400 flex items-center gap-1.5">
+                            <Headphones size={13} /> Lagu Teman Baca
+                          </span>
+                          <div>
+                            <input
+                              ref={editAudioInputRef}
+                              type="file"
+                              accept="audio/*,.mp3,.m4a,.wav,.ogg"
+                              onChange={handleUploadAudioEdit}
+                              className="hidden"
+                            />
+                            <button
+                              type="button"
+                              disabled={uploadingEditAudio}
+                              onClick={() => editAudioInputRef.current?.click()}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-xs font-medium text-emerald-300 transition-colors cursor-pointer disabled:opacity-50"
+                            >
+                              {uploadingEditAudio ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
+                              {uploadingEditAudio ? 'Mengunggah...' : 'Upload MP3'}
+                            </button>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <input value={editData.musicUrl || ''} onChange={e => setEditData({...editData, musicUrl: e.target.value})}
+                            placeholder="Link Lagu Spotify / YouTube / MP3 (Opsional)" className="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white text-xs font-mono outline-none" />
+                          <input value={editData.musicTitle || ''} onChange={e => setEditData({...editData, musicTitle: e.target.value})}
+                            placeholder="Judul Lagu — Artis (Opsional)" className="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white text-xs outline-none" />
+                        </div>
                       </div>
 
                       <div className="space-y-1.5">

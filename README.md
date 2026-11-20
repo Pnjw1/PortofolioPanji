@@ -22,16 +22,16 @@ Website portofolio dan blog pribadi Saya (**Panji Wiguna**) (Web Developer & Des
 
 ---
 
-## Performa & Audit (PageSpeed Insights — Mobile)
+## Performa & Audit (PageSpeed Insights)
 
 Hasil pengujian langsung pada `https://www.panjiwiguna.site` ([Verifikasi live di PageSpeed Insights](https://pagespeed.web.dev/analysis?url=https%3A%2F%2Fwww.panjiwiguna.site%2F)):
 
-| Metrik | Skor |
-| --- | --- |
-| Performance | **98 / 100** |
-| Accessibility | **100 / 100** |
-| Best Practices | **100 / 100** |
-| SEO | **100 / 100** |
+| Metrik | Mobile | Desktop |
+| --- | --- | --- |
+| Performance | **98 / 100** | **100 / 100** |
+| Accessibility | **100 / 100** | **100 / 100** |
+| Best Practices | **100 / 100** | **100 / 100** |
+| SEO | **100 / 100** | **100 / 100** |
 
 ---
 

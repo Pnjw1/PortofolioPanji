@@ -44,7 +44,7 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://va.vercel-scripts.com https://giscus.app https://www.googletagmanager.com",
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https://uwcaukrtnovjdfnofksi.supabase.co https://www.google-analytics.com https://*.google-analytics.com https://www.googletagmanager.com",
+              "img-src 'self' data: blob: https://uwcaukrtnovjdfnofksi.supabase.co https://www.google-analytics.com https://*.google-analytics.com https://www.googletagmanager.com https://i.ytimg.com",
               "font-src 'self' data:",
               "connect-src 'self' https://uwcaukrtnovjdfnofksi.supabase.co https://challenges.cloudflare.com https://vitals.vercel-insights.com https://giscus.app https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com",
               "frame-src https://challenges.cloudflare.com https://open.spotify.com https://www.youtube.com https://giscus.app",

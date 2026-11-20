@@ -13,6 +13,8 @@ import {
   Type,
   Copy,
   BookOpen,
+  Play,
+  X,
 } from 'lucide-react';
 import { useToast } from '@/components/Toast';
 import ViewCounter from '@/components/ViewCounter';
@@ -92,16 +94,17 @@ function toSpotifyEmbedUrl(url: string): string | null {
   }
 }
 
-function toYouTubeEmbedUrl(url: string): string | null {
+function extractYouTubeId(url: string): string | null {
   try {
     const u = new URL(url);
     if (u.hostname.includes('youtu.be')) {
-      const id = u.pathname.slice(1);
-      return id ? `https://www.youtube.com/embed/${id}` : null;
+      return u.pathname.slice(1).split('/')[0] || null;
     }
     if (u.hostname.includes('youtube.com')) {
-      const id = u.searchParams.get('v');
-      return id ? `https://www.youtube.com/embed/${id}` : null;
+      if (u.pathname.startsWith('/embed/')) {
+        return u.pathname.replace('/embed/', '').split('/')[0] || null;
+      }
+      return u.searchParams.get('v') || null;
     }
     return null;
   } catch {
@@ -111,7 +114,8 @@ function toYouTubeEmbedUrl(url: string): string | null {
 
 function MusicCompanionCard({ url, title }: { url: string; title?: string | null }) {
   const spotifyEmbed = toSpotifyEmbedUrl(url);
-  const youtubeEmbed = toYouTubeEmbedUrl(url);
+  const youtubeId = extractYouTubeId(url);
+  const [ytOpen, setYtOpen] = useState(false);
 
   return (
     <div className="my-6 rounded-xl bg-zinc-900/80 border border-zinc-800 p-4 space-y-3">
@@ -120,7 +124,9 @@ function MusicCompanionCard({ url, title }: { url: string; title?: string | null
           <Headphones size={15} />
           <span>Teman Membaca Artikel Ini</span>
         </div>
-        {title && <span className="text-xs text-zinc-400 font-medium truncate">{title}</span>}
+        {title && !youtubeId && (
+          <span className="text-xs text-zinc-400 font-medium truncate">{title}</span>
+        )}
       </div>
 
       {spotifyEmbed ? (
@@ -133,15 +139,62 @@ function MusicCompanionCard({ url, title }: { url: string; title?: string | null
           title={title || 'Spotify Music Player'}
           className="rounded-lg border-0"
         />
-      ) : youtubeEmbed ? (
-        <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-zinc-800">
-          <iframe
-            src={youtubeEmbed}
-            title={title || 'YouTube Audio/Video'}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            className="absolute inset-0 w-full h-full border-0"
-          />
+      ) : youtubeId ? (
+        <div className="space-y-3">
+          {/* Bar ringkas seperti pemutar musik agar tidak memenuhi layar artikel */}
+          <div className="flex items-center justify-between gap-3 p-2.5 rounded-lg bg-zinc-950/90 border border-zinc-800/80">
+            <div className="flex items-center gap-3 min-w-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`https://i.ytimg.com/vi/${youtubeId}/mqdefault.jpg`}
+                alt={title || 'Sampul lagu YouTube'}
+                loading="lazy"
+                className="w-12 h-12 rounded-md object-cover border border-zinc-800 shrink-0"
+              />
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-zinc-100 truncate">
+                  {title || 'Lagu Pengiring Artikel'}
+                </p>
+                <p className="text-xs text-zinc-400 font-mono">
+                  YouTube · Lagu penuh
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setYtOpen((prev) => !prev)}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold shrink-0 transition-colors cursor-pointer ${
+                ytOpen
+                  ? 'bg-zinc-800 text-zinc-200 hover:bg-zinc-700'
+                  : 'bg-cyan-500 text-zinc-950 hover:bg-cyan-400'
+              }`}
+            >
+              {ytOpen ? (
+                <>
+                  <X size={14} />
+                  <span>Tutup</span>
+                </>
+              ) : (
+                <>
+                  <Play size={14} />
+                  <span>Putar</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {ytOpen && (
+            <div className="w-full h-[180px] sm:h-[200px] rounded-lg overflow-hidden border border-zinc-800 bg-black">
+              <iframe
+                src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0`}
+                title={title || 'YouTube Audio Player'}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="w-full h-full border-0"
+              />
+            </div>
+          )}
         </div>
       ) : (
         <audio controls preload="metadata" className="w-full h-10">

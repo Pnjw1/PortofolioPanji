@@ -99,11 +99,22 @@ export default function Footer() {
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Verifikasi skor Google PageSpeed Insights Mobile: Performance 98, Accessibility 100, Best Practices 100, SEO 100"
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 hover:border-emerald-500/40 text-xs font-mono text-zinc-300 hover:text-white transition-colors"
+            className="inline-flex md:hidden items-center gap-2 px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 hover:border-emerald-500/40 text-xs font-mono text-zinc-300 hover:text-white transition-colors"
           >
             <span className="w-2 h-2 rounded-full bg-emerald-400" aria-hidden="true" />
             <span>PageSpeed Mobile</span>
             <span className="text-emerald-400 font-semibold">98 · 100 · 100 · 100</span>
+          </a>
+          <a
+            href={`https://pagespeed.web.dev/analysis?url=${encodeURIComponent(SITE.url)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Verifikasi skor Google PageSpeed Insights Desktop: Performance 100, Accessibility 100, Best Practices 100, SEO 100"
+            className="hidden md:inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 hover:border-emerald-500/40 text-xs font-mono text-zinc-300 hover:text-white transition-colors"
+          >
+            <span className="w-2 h-2 rounded-full bg-emerald-400" aria-hidden="true" />
+            <span>PageSpeed Desktop</span>
+            <span className="text-emerald-400 font-semibold">100 · 100 · 100 · 100</span>
           </a>
           <p className="text-xs text-zinc-400 font-mono">
             Built with <span className="text-cyan-400">Next.js</span> &amp; <span className="text-zinc-200">Supabase</span>
