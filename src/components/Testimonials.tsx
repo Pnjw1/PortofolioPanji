@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Quote } from 'lucide-react';
-import Image from 'next/image';
 
 export interface Testimonial {
   id: number;
@@ -24,9 +23,12 @@ function TestimonialCard({ item }: { item: Testimonial }) {
 
         <div className="flex items-center gap-3">
           {item.avatar_url ? (
-            <div className="relative w-10 h-10 rounded-full overflow-hidden border border-cyan-500/30">
-              <Image src={item.avatar_url} alt={`Foto ${item.name}`} fill sizes="40px" className="object-cover" />
-            </div>
+            <div
+              role="img"
+              aria-label={`Testimoni dari ${item.name} (${item.role})`}
+              className="relative w-10 h-10 rounded-full overflow-hidden border border-cyan-500/30 bg-cover bg-center shrink-0"
+              style={{ backgroundImage: `url("${encodeURI(item.avatar_url)}")` }}
+            />
           ) : (
             <div className="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-cyan-400 font-bold">
               {item.name.charAt(0).toUpperCase()}
