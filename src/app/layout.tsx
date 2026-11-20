@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Geist, JetBrains_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import ScrollToTop from "@/components/ScrollToTop";
 import { ToastProvider } from "@/components/Toast";
 import "./globals.css";
 import { SITE } from "@/lib/site";
+
+const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID || "GTM-P3M2ZQD2";
+const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_ID || "G-4P39HEVZB5";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -109,6 +113,18 @@ export default function RootLayout({
         </ToastProvider>
         <ScrollToTop />
         <Analytics />
+        <Script
+          src={`https://www.googletagmanager.com/gtm.js?id=${GTM_ID}`}
+          strategy="afterInteractive"
+        />
+        <Script id="google-tag-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${GA_MEASUREMENT_ID}');
+          `}
+        </Script>
       </body>
     </html>
   );
