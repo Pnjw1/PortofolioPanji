@@ -75,7 +75,7 @@ export default function Testimonials({ initialTestimonials = [] }: { initialTest
           >
             <ChevronLeft size={18} />
           </button>
-          <span className="text-xs text-zinc-500 font-mono">{page + 1}/{totalPages}</span>
+          <span className="text-xs text-zinc-400 font-mono">{page + 1}/{totalPages}</span>
           <button
             onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
             disabled={page >= totalPages - 1}

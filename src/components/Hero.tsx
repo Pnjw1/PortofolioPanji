@@ -27,22 +27,30 @@ function PendulumNameTag() {
     mass: 1.2,
   });
 
-  // Goyangan pelan saat diam. Memakai motion value agar tidak memicu re-render tiap frame.
+  // Goyangan pelan saat diam. Ditunda sedikit agar tidak membebani initial load (TBT),
+  // dan otomatis berhenti saat tab tidak aktif.
   const idleAngle = useMotionValue(0);
   useEffect(() => {
     if (reduceMotion) {
       idleAngle.set(0);
       return;
     }
-    let frame: number;
+    let frame = 0;
     let t = 0;
     const animate = () => {
-      t += 0.015;
-      idleAngle.set(Math.sin(t) * 2);
+      if (!document.hidden) {
+        t += 0.015;
+        idleAngle.set(Math.sin(t) * 2);
+      }
       frame = requestAnimationFrame(animate);
     };
-    frame = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(frame);
+    const startTimer = window.setTimeout(() => {
+      frame = requestAnimationFrame(animate);
+    }, 2000);
+    return () => {
+      window.clearTimeout(startTimer);
+      if (frame) cancelAnimationFrame(frame);
+    };
   }, [idleAngle, reduceMotion]);
 
   const rotate = useTransform([smoothAngle, idleAngle], ([a, i]) => (a as number) + (i as number));
@@ -128,6 +136,7 @@ function PendulumNameTag() {
               type="button"
               onClick={() => setIsFlipped(true)}
               aria-label="Balik kartu untuk melihat QR portofolio"
+              aria-hidden={isFlipped}
               tabIndex={isFlipped ? -1 : 0}
               className="absolute inset-0 rounded-2xl overflow-hidden bg-[#161616] border border-zinc-700 flex flex-col text-left cursor-pointer"
               style={{ backfaceVisibility: 'hidden' }}
@@ -136,17 +145,17 @@ function PendulumNameTag() {
 
               <div className="relative w-32 h-36 md:w-40 md:h-44 mx-auto mt-6 rounded-lg overflow-hidden border border-zinc-700 bg-zinc-900 shrink-0">
                 <Image
-                  src="/images/panji-wiguna.png"
+                  src="/images/panji-wiguna.webp"
                   alt="Foto Panji Wiguna"
                   fill
-                  sizes="160px"
+                  sizes="(max-width: 768px) 128px, 160px"
                   className="object-cover object-top"
                   priority
                 />
               </div>
 
               <div className="flex-1 flex flex-col justify-center items-center px-4 space-y-1.5 text-center">
-                <h3 className="text-white font-bold text-xl md:text-2xl tracking-tight">Panji Wiguna</h3>
+                <p className="text-white font-bold text-xl md:text-2xl tracking-tight">Panji Wiguna</p>
                 <p className="text-zinc-400 text-xs leading-relaxed">
                   Web Developer &amp; Desainer<br />
                   Komunikasi Visual (DKV)
@@ -163,6 +172,7 @@ function PendulumNameTag() {
               type="button"
               onClick={() => setIsFlipped(false)}
               aria-label="Balik kartu ke sisi depan"
+              aria-hidden={!isFlipped}
               tabIndex={isFlipped ? 0 : -1}
               className="absolute inset-0 rounded-2xl overflow-hidden bg-[#161616] border border-zinc-700 flex flex-col items-center cursor-pointer"
               style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}

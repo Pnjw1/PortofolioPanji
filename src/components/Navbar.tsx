@@ -42,6 +42,7 @@ export default function Navbar() {
   return (
     <>
       <nav
+        aria-label="Navigasi utama"
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           scrolled
             ? "bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-zinc-800/50 shadow-lg shadow-black/20"
@@ -57,7 +58,7 @@ export default function Navbar() {
               className="flex items-center gap-2 group"
             >
               <div className="w-9 h-9 bg-zinc-800/80 border border-zinc-700/50 rounded-lg flex items-center justify-center overflow-hidden group-hover:border-cyan-500/40 transition-all duration-300">
-                <Image src="/images/favicon.svg" alt="Logo Panji Wiguna" width={28} height={28} />
+                <Image src="/favicon-48x48.png" alt="Logo Panji Wiguna" width={28} height={28} />
               </div>
               <span className="font-mono text-sm font-bold text-white group-hover:text-cyan-400 transition-colors duration-300">
                 panjiwiguna

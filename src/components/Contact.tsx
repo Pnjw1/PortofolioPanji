@@ -16,7 +16,30 @@ export default function Contact() {
   const [cooldown, setCooldown] = useState(0);
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [shouldLoadTurnstile, setShouldLoadTurnstile] = useState(false);
   const turnstileRef = useRef<TurnstileInstance>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+
+  // Lazy-load widget Cloudflare Turnstile hanya saat seksi kontak mendekati viewport
+  useEffect(() => {
+    if (!turnstileSiteKey || shouldLoadTurnstile) return;
+    const el = sectionRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') {
+      setShouldLoadTurnstile(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setShouldLoadTurnstile(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '300px 0px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [shouldLoadTurnstile]);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -124,7 +147,7 @@ export default function Contact() {
   };
 
   return (
-    <section className="py-12 space-y-10">
+    <section ref={sectionRef} className="py-12 space-y-10">
       <div className="space-y-3">
         <h2 className="text-3xl md:text-4xl font-bold text-white">Kontak</h2>
         <div className="w-12 h-0.5 bg-cyan-500" />
@@ -217,7 +240,11 @@ export default function Contact() {
         {/* Form */}
         <div className="bg-zinc-900/60 p-6 rounded-xl border border-zinc-800">
           <h3 className="text-lg font-semibold text-white mb-4">Kirim Pesan</h3>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form
+            onSubmit={handleSubmit}
+            onFocus={() => setShouldLoadTurnstile(true)}
+            className="space-y-4"
+          >
             <div>
               <label htmlFor="contact-name" className="block text-xs font-mono text-zinc-300 mb-1">Nama</label>
               <input 
@@ -271,14 +298,20 @@ export default function Contact() {
             </div>
             
             {turnstileSiteKey && (
-              <div className="flex justify-center py-2">
-                <Turnstile 
-                  ref={turnstileRef}
-                  siteKey={turnstileSiteKey} 
-                  onSuccess={(token) => setTurnstileToken(token)}
-                  onExpire={() => setTurnstileToken(null)}
-                  options={{ theme: 'dark' }}
-                />
+              <div className="flex justify-center py-2 min-h-[73px] items-center">
+                {shouldLoadTurnstile ? (
+                  <Turnstile 
+                    ref={turnstileRef}
+                    siteKey={turnstileSiteKey} 
+                    onSuccess={(token) => setTurnstileToken(token)}
+                    onExpire={() => setTurnstileToken(null)}
+                    options={{ theme: 'dark' }}
+                  />
+                ) : (
+                  <span className="text-xs font-mono text-zinc-400">
+                    Menyiapkan verifikasi keamanan...
+                  </span>
+                )}
               </div>
             )}
 

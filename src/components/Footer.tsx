@@ -42,7 +42,7 @@ export default function Footer() {
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <div className="w-9 h-9 bg-zinc-800/80 border border-zinc-700/50 rounded-lg flex items-center justify-center overflow-hidden">
-                <Image src="/images/favicon.svg" alt="Logo Panji Wiguna" width={28} height={28} />
+                <Image src="/favicon-48x48.png" alt="Logo Panji Wiguna" width={28} height={28} />
               </div>
               <span className="font-mono text-sm font-bold text-white">panjiwiguna</span>
             </div>
@@ -53,8 +53,8 @@ export default function Footer() {
 
           {/* Quick Links */}
           <div className="space-y-3">
-            <h4 className="text-xs font-mono text-zinc-400 uppercase tracking-widest">Navigasi</h4>
-            <nav className="flex flex-col gap-2">
+            <p className="text-xs font-mono text-zinc-400 uppercase tracking-widest">Navigasi</p>
+            <nav aria-label="Navigasi footer" className="flex flex-col gap-2">
               {navLinks.map((link) => (
                 <a
                   key={link.label}
@@ -71,7 +71,7 @@ export default function Footer() {
 
           {/* Social */}
           <div className="space-y-3">
-            <h4 className="text-xs font-mono text-zinc-400 uppercase tracking-widest">Connect</h4>
+            <p className="text-xs font-mono text-zinc-400 uppercase tracking-widest">Connect</p>
             <div className="flex gap-3">
               {socialLinks.map((social) => (
                 <a
