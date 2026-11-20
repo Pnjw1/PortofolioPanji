@@ -105,6 +105,8 @@ export default function Experience({ initialExperiences = [] }: { initialExperie
                           <img
                             src={exp.logo_url}
                             alt={`Logo ${exp.company}`}
+                            loading="lazy"
+                            decoding="async"
                             className="max-h-11 max-w-[96px] w-auto h-auto object-contain"
                           />
                         </div>

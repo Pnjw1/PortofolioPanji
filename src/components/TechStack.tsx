@@ -123,6 +123,8 @@ export default function TechStack({ initialTechnologies = [] }: { initialTechnol
                 <img
                   src={tech.logo_url}
                   alt={`Logo ${tech.name}`}
+                  loading="lazy"
+                  decoding="async"
                   className="max-w-full max-h-full w-auto h-auto object-contain"
                 />
               ) : (
@@ -172,6 +174,8 @@ export default function TechStack({ initialTechnologies = [] }: { initialTechnol
                       <img
                         src={tech.logo_url}
                         alt={`Logo ${tech.name}`}
+                        loading="lazy"
+                        decoding="async"
                         className="max-w-full max-h-full w-auto h-auto object-contain"
                       />
                     ) : (
