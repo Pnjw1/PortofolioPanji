@@ -1,10 +1,16 @@
 "use client";
 
 import { useRef, useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { Mail, Phone, Code2, Send, Loader2, Copy, Check, ExternalLink } from 'lucide-react';
 import { useToast } from '@/components/Toast';
 import { SITE } from '@/lib/site';
-import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
+import type { TurnstileInstance } from '@marsidev/react-turnstile';
+
+const Turnstile = dynamic(
+  () => import('@marsidev/react-turnstile').then((mod) => mod.Turnstile),
+  { ssr: false }
+);
 
 const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 

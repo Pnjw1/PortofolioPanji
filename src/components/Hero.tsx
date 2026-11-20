@@ -1,15 +1,19 @@
 "use client";
 
-import { motion, useMotionValue, useSpring, useTransform, useReducedMotion, PanInfo } from 'framer-motion';
+import dynamic from 'next/dynamic';
 import { Github, Linkedin, Instagram, Mail, Code2 } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
 import VisitorCounter from './VisitorCounter';
 import Image from 'next/image';
-import { useRef, useCallback, useEffect, useState } from 'react';
+import { useRef, useCallback, useState } from 'react';
 import { SITE } from '@/lib/site';
 
+const QRCodeSVG = dynamic(
+  () => import('qrcode.react').then((mod) => mod.QRCodeSVG),
+  { ssr: false }
+);
+
 /* =========================================
-   KARTU NAMA GANTUNG
+   KARTU NAMA GANTUNG (Ringan, tanpa framer-motion)
    - Tali mengikuti ayunan kartu
    - Seret atau arahkan kursor untuk mengayunkan
    - Klik untuk membalik, sisi belakang berisi QR ke portofolio
@@ -17,71 +21,55 @@ import { SITE } from '@/lib/site';
 
 function PendulumNameTag() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const reduceMotion = useReducedMotion();
+  const dragStartX = useRef<number | null>(null);
+  const didDrag = useRef(false);
 
-  // Sudut ayunan dalam derajat (positif = kanan, negatif = kiri)
-  const swingAngle = useMotionValue(0);
-  const smoothAngle = useSpring(swingAngle, {
-    stiffness: 40,
-    damping: 8,
-    mass: 1.2,
-  });
-
-  // Goyangan pelan saat diam. Ditunda sedikit agar tidak membebani initial load (TBT),
-  // dan otomatis berhenti saat tab tidak aktif.
-  const idleAngle = useMotionValue(0);
-  useEffect(() => {
-    if (reduceMotion) {
-      idleAngle.set(0);
-      return;
-    }
-    let frame = 0;
-    let t = 0;
-    const animate = () => {
-      if (!document.hidden) {
-        t += 0.015;
-        idleAngle.set(Math.sin(t) * 2);
-      }
-      frame = requestAnimationFrame(animate);
-    };
-    const startTimer = window.setTimeout(() => {
-      frame = requestAnimationFrame(animate);
-    }, 2000);
-    return () => {
-      window.clearTimeout(startTimer);
-      if (frame) cancelAnimationFrame(frame);
-    };
-  }, [idleAngle, reduceMotion]);
-
-  const rotate = useTransform([smoothAngle, idleAngle], ([a, i]) => (a as number) + (i as number));
-  const ropeControlX = useTransform(smoothAngle, [-30, 0, 30], [20, 0, -20]);
-  const ropePath = useTransform(ropeControlX, (cx) => `M 0 0 Q ${cx * 1.2} 44 0 80`);
-
-  const handleDrag = useCallback((_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    if (reduceMotion) return;
-    const angle = Math.max(-35, Math.min(35, info.offset.x * -0.25));
-    swingAngle.set(angle);
-  }, [swingAngle, reduceMotion]);
-
-  const handleDragEnd = useCallback((_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    if (reduceMotion) return;
-    const momentum = Math.max(-45, Math.min(45, info.velocity.x * 0.05));
-    swingAngle.set(momentum);
-    setTimeout(() => swingAngle.set(0), 100);
-  }, [swingAngle, reduceMotion]);
+  const [angle, setAngle] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isFlipped, setIsFlipped] = useState(false);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!containerRef.current || reduceMotion) return;
+    if (isDragging || !containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
     const offsetX = e.clientX - (rect.left + rect.width / 2);
-    swingAngle.set(Math.max(-15, Math.min(15, offsetX * -0.06)));
-  }, [swingAngle, reduceMotion]);
+    setAngle(Math.max(-12, Math.min(12, offsetX * -0.05)));
+  }, [isDragging]);
 
   const handleMouseLeave = useCallback(() => {
-    swingAngle.set(0);
-  }, [swingAngle]);
+    if (!isDragging) setAngle(0);
+  }, [isDragging]);
 
-  const [isFlipped, setIsFlipped] = useState(false);
+  const handlePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    dragStartX.current = e.clientX;
+    didDrag.current = false;
+    setIsDragging(true);
+  }, []);
+
+  const handlePointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (dragStartX.current === null) return;
+    const deltaX = e.clientX - dragStartX.current;
+    if (Math.abs(deltaX) > 6) {
+      didDrag.current = true;
+    }
+    setAngle(Math.max(-28, Math.min(28, deltaX * -0.2)));
+  }, []);
+
+  const handlePointerUp = useCallback(() => {
+    dragStartX.current = null;
+    setIsDragging(false);
+    setAngle(0);
+  }, []);
+
+  const handleCardToggle = useCallback((nextFlipped: boolean) => {
+    if (didDrag.current) {
+      didDrag.current = false;
+      return;
+    }
+    setIsFlipped(nextFlipped);
+  }, []);
+
+  const ropeControlX = Math.max(-20, Math.min(20, angle * -0.7));
+  const ropePath = `M 0 0 Q ${(ropeControlX * 1.2).toFixed(1)} 44 0 80`;
 
   return (
     <div
@@ -98,24 +86,29 @@ function PendulumNameTag() {
         className="z-10 overflow-visible pointer-events-none"
         aria-hidden="true"
       >
-        <motion.path
+        <path
+          d={ropePath}
           fill="none"
           stroke="#52525b"
           strokeWidth="3"
           strokeLinecap="round"
-          style={{ d: ropePath }}
         />
       </svg>
 
       {/* Kartu berayun dari titik tengah atas */}
-      <motion.div
-        drag={reduceMotion ? false : "x"}
-        dragConstraints={{ left: 0, right: 0 }}
-        dragElastic={0}
-        onDrag={handleDrag}
-        onDragEnd={handleDragEnd}
-        style={{ rotate: reduceMotion ? 0 : rotate, transformOrigin: 'top center', x: 0 }}
-        className="relative cursor-grab active:cursor-grabbing touch-none -mt-1"
+      <div
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        style={{
+          transform: `rotate(${angle.toFixed(2)}deg)`,
+          transformOrigin: 'top center',
+          transition: isDragging
+            ? 'none'
+            : 'transform 650ms cubic-bezier(0.22, 1.4, 0.36, 1)',
+        }}
+        className="relative cursor-grab active:cursor-grabbing touch-pan-y -mt-1 motion-reduce:transition-none"
       >
         {/* Klip logam */}
         <div className="relative flex justify-center z-20" aria-hidden="true">
@@ -125,16 +118,17 @@ function PendulumNameTag() {
         </div>
 
         <div className="relative w-[220px] h-[340px] md:w-[260px] md:h-[400px] z-10 [perspective:1000px]">
-          <motion.div
-            className="w-full h-full relative"
-            style={{ transformStyle: 'preserve-3d' }}
-            animate={{ rotateY: isFlipped ? 180 : 0 }}
-            transition={reduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 50, damping: 10 }}
+          <div
+            className="w-full h-full relative transition-transform duration-500 motion-reduce:transition-none"
+            style={{
+              transformStyle: 'preserve-3d',
+              transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+            }}
           >
             {/* DEPAN */}
             <button
               type="button"
-              onClick={() => setIsFlipped(true)}
+              onClick={() => handleCardToggle(true)}
               aria-label="Balik kartu untuk melihat QR portofolio"
               aria-hidden={isFlipped}
               tabIndex={isFlipped ? -1 : 0}
@@ -151,6 +145,7 @@ function PendulumNameTag() {
                   sizes="(max-width: 768px) 128px, 160px"
                   className="object-cover object-top"
                   priority
+                  fetchPriority="high"
                 />
               </div>
 
@@ -170,7 +165,7 @@ function PendulumNameTag() {
             {/* BELAKANG */}
             <button
               type="button"
-              onClick={() => setIsFlipped(false)}
+              onClick={() => handleCardToggle(false)}
               aria-label="Balik kartu ke sisi depan"
               aria-hidden={!isFlipped}
               tabIndex={isFlipped ? 0 : -1}
@@ -180,13 +175,15 @@ function PendulumNameTag() {
               <div className="w-14 h-3 mt-3 rounded-full bg-[#0a0a0a] border-b border-white/5" />
 
               <div className="flex-1 flex flex-col justify-center items-center w-full px-6 space-y-5">
-                <div className="bg-white rounded-lg p-3">
-                  <QRCodeSVG
-                    value={SITE.url}
-                    size={128}
-                    level="M"
-                    title="QR code menuju portofolio Panji Wiguna"
-                  />
+                <div className="bg-white rounded-lg p-3 min-w-[152px] min-h-[152px] flex items-center justify-center">
+                  {isFlipped && (
+                    <QRCodeSVG
+                      value={SITE.url}
+                      size={128}
+                      level="M"
+                      title="QR code menuju portofolio Panji Wiguna"
+                    />
+                  )}
                 </div>
                 <div className="text-center space-y-1">
                   <p className="text-zinc-300 text-xs">Pindai untuk membuka portofolio</p>
@@ -194,9 +191,9 @@ function PendulumNameTag() {
                 </div>
               </div>
             </button>
-          </motion.div>
+          </div>
         </div>
-      </motion.div>
+      </div>
 
       <p className="text-zinc-400 text-[10px] md:text-xs font-mono mt-4 text-center">
         <span className="hidden md:inline">Geser atau arahkan kursor untuk mengayunkan, klik untuk membalik</span>

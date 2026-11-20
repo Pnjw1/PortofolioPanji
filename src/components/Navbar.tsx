@@ -1,10 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import Image from "next/image";
-import { SITE } from "@/lib/site";
 
 const navLinks = [
   { label: "Proyek", href: "#projects" },
@@ -103,39 +101,33 @@ export default function Navbar() {
       </nav>
 
       {/* Mobile Dropdown Menu */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            id="mobile-menu"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-            className="fixed top-16 left-0 right-0 z-40 max-h-[calc(100vh-4rem)] overflow-y-auto bg-[#0a0a0a]/95 backdrop-blur-xl border-b border-zinc-800 shadow-xl md:hidden"
-          >
-            <div className="container mx-auto px-6 py-4 flex flex-col gap-1">
-              {navLinks.map((link) => (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  download={link.download ? "CV_Panji_Wiguna.pdf" : undefined}
-                  onClick={(e) => handleLinkClick(e, link.href)}
-                  className="px-4 py-3 text-sm text-zinc-300 hover:text-white hover:bg-white/5 rounded-lg transition-all duration-200 font-medium"
-                >
-                  {link.label}
-                </a>
-              ))}
+      {isOpen && (
+        <div
+          id="mobile-menu"
+          className="fixed top-16 left-0 right-0 z-40 max-h-[calc(100vh-4rem)] overflow-y-auto bg-[#0a0a0a]/95 backdrop-blur-xl border-b border-zinc-800 shadow-xl md:hidden"
+        >
+          <div className="container mx-auto px-6 py-4 flex flex-col gap-1">
+            {navLinks.map((link) => (
               <a
-                href="#contact"
-                onClick={(e) => handleLinkClick(e, "#contact")}
-                className="mt-2 px-4 py-3 text-sm text-center bg-cyan-500 text-zinc-950 rounded-lg font-semibold hover:bg-cyan-400 transition-colors cursor-pointer"
+                key={link.label}
+                href={link.href}
+                download={link.download ? "CV_Panji_Wiguna.pdf" : undefined}
+                onClick={(e) => handleLinkClick(e, link.href)}
+                className="px-4 py-3 text-sm text-zinc-300 hover:text-white hover:bg-white/5 rounded-lg transition-all duration-200 font-medium"
               >
-                Hubungi Saya
+                {link.label}
               </a>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            ))}
+            <a
+              href="#contact"
+              onClick={(e) => handleLinkClick(e, "#contact")}
+              className="mt-2 px-4 py-3 text-sm text-center bg-cyan-500 text-zinc-950 rounded-lg font-semibold hover:bg-cyan-400 transition-colors cursor-pointer"
+            >
+              Hubungi Saya
+            </a>
+          </div>
+        </div>
+      )}
     </>
   );
 }

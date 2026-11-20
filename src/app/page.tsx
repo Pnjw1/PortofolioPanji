@@ -9,12 +9,12 @@ import Testimonials from '@/components/Testimonials';
 import Contact from '@/components/Contact';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { createSupabasePublicClient } from '@/lib/supabase-public';
 
 export const revalidate = 60;
 
 export default async function Home() {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabasePublicClient();
 
   const [
     projectsRes,

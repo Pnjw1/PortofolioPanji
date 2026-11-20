@@ -2,38 +2,34 @@
 
 import { useState, useEffect } from 'react';
 import { Eye } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
 
 export default function VisitorCounter() {
   const [count, setCount] = useState<number | null>(null);
 
   useEffect(() => {
+    let active = true;
     async function trackVisit() {
       try {
         const visited = sessionStorage.getItem('visited');
-
-        if (!visited) {
-          // Gunakan atomic RPC agar tidak ada race condition
-          // saat banyak user mengakses secara bersamaan
-          const { data, error } = await supabase.rpc('increment_page_views');
-          if (error) throw error;
-          if (data !== null) setCount(data);
-          sessionStorage.setItem('visited', 'true');
-        } else {
-          // Cuma baca, jangan increment
-          const { data, error } = await supabase
-            .from('page_views')
-            .select('count')
-            .eq('id', 1)
-            .single();
-          if (error) throw error;
-          if (data) setCount(data.count);
+        const res = await fetch('/api/visitor-count', {
+          method: visited ? 'GET' : 'POST',
+        });
+        if (!res.ok) return;
+        const json = await res.json();
+        if (active && typeof json.count === 'number') {
+          setCount(json.count);
         }
-      } catch (err) {
-        console.error('Error tracking visit:', err);
+        if (!visited) {
+          sessionStorage.setItem('visited', 'true');
+        }
+      } catch {
+        // Abaikan error jaringan agar tidak mengganggu tampilan utama
       }
     }
     trackVisit();
+    return () => {
+      active = false;
+    };
   }, []);
 
   if (count === null) return null;
