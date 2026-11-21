@@ -116,9 +116,19 @@ export default function Footer() {
             <span>PageSpeed Desktop</span>
             <span className="text-emerald-400 font-semibold">100 · 100 · 100 · 100</span>
           </a>
-          <p className="text-xs text-zinc-400 font-mono">
-            Built with <span className="text-cyan-400">Next.js</span> &amp; <span className="text-zinc-200">Supabase</span>
-          </p>
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-zinc-400 font-mono">
+            <Link href="/privacy" className="hover:text-cyan-400 transition-colors">
+              Kebijakan Privasi
+            </Link>
+            <span aria-hidden="true" className="text-zinc-700">·</span>
+            <Link href="/terms" className="hover:text-cyan-400 transition-colors">
+              Syarat &amp; Ketentuan
+            </Link>
+            <span aria-hidden="true" className="text-zinc-700 hidden sm:inline">·</span>
+            <span>
+              Built with <span className="text-cyan-400">Next.js</span> &amp; <span className="text-zinc-200">Supabase</span>
+            </span>
+          </div>
         </div>
       </div>
     </footer>

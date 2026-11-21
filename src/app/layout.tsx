@@ -10,6 +10,7 @@ import { SITE } from "@/lib/site";
 
 const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID || "GTM-P3M2ZQD2";
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_ID || "G-4P39HEVZB5";
+const ADSENSE_CLIENT = process.env.NEXT_PUBLIC_ADSENSE_CLIENT || "ca-pub-8101810994202815";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,6 +32,9 @@ export const metadata: Metadata = {
   authors: [{ name: "Panji Wiguna" }],
   verification: {
     google: "aInrjvQjT0_0CSueDlePUm77XhHwx3qiwyMGs6cK9gM",
+  },
+  other: {
+    "google-adsense-account": ADSENSE_CLIENT,
   },
   alternates: {
     canonical: SITE.url,
@@ -135,6 +139,11 @@ export default function RootLayout({
             gtag('config', '${GA_MEASUREMENT_ID}');
           `}
         </Script>
+        <Script
+          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`}
+          crossOrigin="anonymous"
+          strategy="lazyOnload"
+        />
       </body>
     </html>
   );
